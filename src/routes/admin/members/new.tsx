@@ -1,19 +1,16 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { registerMember, getPlans } from "~/lib/server-fns.js";
+import { registerMember } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
 import { Label } from "~/components/ui/label.js";
-import { Select } from "~/components/ui/select.js";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card.js";
 
 export const Route = createFileRoute("/admin/members/new")({
-  loader: () => getPlans(),
   component: RegisterMember,
 });
 
 function RegisterMember() {
-  const plans = Route.useLoaderData();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,15 +21,6 @@ function RegisterMember() {
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const planId = form.get("planId") as string;
-    const selectedPlan = plans.find((p) => p.id === planId);
-    const monthlyAmount = form.get("monthlyAmount") as string;
-
-    if (selectedPlan && Number(monthlyAmount) < Number(selectedPlan.minAmount)) {
-      setError(`Minimum amount for ${selectedPlan.name} is $${selectedPlan.minAmount}`);
-      setLoading(false);
-      return;
-    }
 
     try {
       await registerMember({
@@ -42,8 +30,7 @@ function RegisterMember() {
           phone: (form.get("phone") as string) || undefined,
           nric: (form.get("nric") as string) || undefined,
           address: (form.get("address") as string) || undefined,
-          planId,
-          monthlyAmount,
+          monthlyAmount: form.get("monthlyAmount") as string,
         },
       });
       router.navigate({ to: "/admin/members" });
@@ -98,29 +85,19 @@ function RegisterMember() {
               <Input id="address" name="address" />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="planId">Plan *</Label>
-                <Select id="planId" name="planId" required>
-                  <option value="">Select a plan</option>
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} (min ${p.minAmount}/mo)
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="monthlyAmount">Monthly Amount ($) *</Label>
-                <Input
-                  id="monthlyAmount"
-                  name="monthlyAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="monthlyAmount">Monthly Amount ($) *</Label>
+              <Input
+                id="monthlyAmount"
+                name="monthlyAmount"
+                type="number"
+                step="0.01"
+                min="5"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                $5–$19.99: Skim Pintar &middot; $20+: Skim Pintar Plus
+              </p>
             </div>
 
             <div className="flex gap-3 pt-4">

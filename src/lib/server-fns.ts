@@ -167,12 +167,26 @@ export const registerMember = createServerFn({ method: "POST" })
       phone?: string;
       nric?: string;
       address?: string;
-      planId: string;
       monthlyAmount: string;
     }) => data,
   )
   .handler(async ({ data }) => {
     const session = await requireAdminSession();
+
+    // Resolve plan from amount — pick the highest-tier plan the amount qualifies for
+    const allPlans = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.active, true))
+      .orderBy(desc(plans.minAmount));
+
+    const amount = Number(data.monthlyAmount);
+    const matchedPlan = allPlans.find((p) => amount >= Number(p.minAmount));
+    if (!matchedPlan) {
+      throw new Error(
+        `Minimum monthly amount is $${allPlans[allPlans.length - 1]?.minAmount}`,
+      );
+    }
 
     // Create user via better-auth
     const newUser = await auth.api.signUpEmail({
@@ -212,7 +226,7 @@ export const registerMember = createServerFn({ method: "POST" })
 
     await db.insert(subscriptions).values({
       memberId: member!.id,
-      planId: data.planId,
+      planId: matchedPlan.id,
       monthlyAmount: data.monthlyAmount,
       status: "pending_payment",
       paymentMethod: "manual",
@@ -232,7 +246,7 @@ export const registerMember = createServerFn({ method: "POST" })
       entityType: "member",
       entityId: member!.id,
       action: "registered",
-      newValue: { name: data.name, email: data.email, planId: data.planId },
+      newValue: { name: data.name, email: data.email, plan: matchedPlan.slug },
       performedBy: session.user.id,
     });
 
@@ -489,7 +503,38 @@ export const addDependant = createServerFn({ method: "POST" })
     }) => data,
   )
   .handler(async ({ data }) => {
-    await getSession();
+    const session = await getSession();
+
+    // Verify the subscription belongs to this user and plan allows dependants
+    const [sub] = await db
+      .select({
+        id: subscriptions.id,
+        maxDependants: plans.maxDependants,
+        planSlug: plans.slug,
+      })
+      .from(subscriptions)
+      .innerJoin(plans, eq(subscriptions.planId, plans.id))
+      .innerJoin(members, eq(subscriptions.memberId, members.id))
+      .where(
+        and(
+          eq(subscriptions.id, data.subscriptionId),
+          eq(members.userId, session.user.id),
+        ),
+      );
+
+    if (!sub || sub.planSlug !== "pintar_plus") {
+      throw new Error("Your plan does not support dependants");
+    }
+
+    if (sub.maxDependants !== null) {
+      const existing = await db
+        .select({ count: count() })
+        .from(dependants)
+        .where(eq(dependants.subscriptionId, sub.id));
+      if (existing[0].count >= sub.maxDependants) {
+        throw new Error("Maximum number of dependants reached");
+      }
+    }
 
     const [dep] = await db
       .insert(dependants)

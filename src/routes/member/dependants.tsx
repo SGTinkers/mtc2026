@@ -94,6 +94,22 @@ function DependantsPage() {
         </Card>
       )}
 
+      {subscriptionId && canAdd && deps.length === 0 && !showForm && (
+        <Card>
+          <CardContent className="flex flex-col items-center py-12 text-center text-muted-foreground">
+            <Users className="mb-4 h-12 w-12" />
+            <p>No dependants added yet.</p>
+            <p className="mt-1 text-sm">
+              Add family members to extend your coverage to them.
+            </p>
+            <Button className="mt-4" onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4" />
+              Add Dependant
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {showForm && (
         <Card className="mb-6">
           <CardHeader>

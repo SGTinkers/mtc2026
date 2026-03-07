@@ -319,6 +319,15 @@ async function handleWebhook(request: Request): Promise<Response> {
           .where(eq(subscriptions.stripeSubscriptionId, stripeSubId));
 
         if (sub) {
+          await db.insert(payments).values({
+            subscriptionId: sub.id,
+            amount: (invoice.amount_due / 100).toFixed(2),
+            method: "stripe",
+            stripeInvoiceId: invoice.id,
+            status: "failed",
+            periodMonth: new Date().toISOString().split("T")[0],
+          });
+
           try {
             const [member] = await db
               .select({ email: user.email })

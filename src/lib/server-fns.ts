@@ -931,6 +931,10 @@ export const getCheckoutSubscriptionInfo = createServerFn({ method: "POST" })
         data.sessionId,
       );
 
+      if (checkoutSession.status === "expired") {
+        return { failed: true as const };
+      }
+
       const stripeSubId = checkoutSession.subscription as string | null;
       if (!stripeSubId) return null;
 

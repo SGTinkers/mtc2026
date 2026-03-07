@@ -90,6 +90,11 @@ export const paymentRecordMethodEnum = pgEnum("payment_record_method", [
   "paynow",
 ]);
 
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "succeeded",
+  "failed",
+]);
+
 export const relationshipEnum = pgEnum("relationship", [
   "spouse",
   "child",
@@ -169,6 +174,7 @@ export const payments = pgTable("payments", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   method: paymentRecordMethodEnum("method").notNull(),
   stripeInvoiceId: text("stripe_invoice_id"),
+  status: paymentStatusEnum("status").notNull().default("succeeded"),
   reference: text("reference"),
   periodMonth: date("period_month"),
   recordedBy: text("recorded_by").references(() => user.id),

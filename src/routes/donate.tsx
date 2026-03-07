@@ -54,6 +54,11 @@ function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
         try {
           const info = await getCheckoutSubscriptionInfo({ data: { sessionId: sid } });
           if (cancelled) return;
+          if (info && "failed" in info) {
+            setError(true);
+            setLoading(false);
+            return;
+          }
           if (info) {
             setSubInfo(info as SubInfo);
             setLoading(false);

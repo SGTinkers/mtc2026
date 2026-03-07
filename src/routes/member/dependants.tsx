@@ -107,7 +107,7 @@ function DependantsPage() {
       {subscriptionId && canAdd && deps.length === 0 && !showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white/50 py-10 transition-all hover:border-g1/40"
+          className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white/50 py-10 cursor-pointer transition-all hover:border-g1/40"
         >
           <UserPlus className="h-8 w-8 text-txt3" />
           <div className="text-center">

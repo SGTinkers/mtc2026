@@ -495,7 +495,7 @@ function OnboardingWizard({
             ) : (
               <button
                 onClick={() => setShowAddForm(true)}
-                className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-white/50 py-5 text-sm font-medium text-txt2 transition-all hover:border-g1/40 hover:text-g1"
+                className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-white/50 py-5 text-sm font-medium text-txt2 cursor-pointer transition-all hover:border-g1/40 hover:text-g1"
               >
                 <UserPlus className="h-5 w-5" />
                 {addedMembers.length === 0

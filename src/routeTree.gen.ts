@@ -22,11 +22,14 @@ import { Route as MemberDependantsRouteImport } from './routes/member/dependants
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminPaymentsIndexRouteImport } from './routes/admin/payments/index'
 import { Route as AdminMembersIndexRouteImport } from './routes/admin/members/index'
+import { Route as AdminAuditIndexRouteImport } from './routes/admin/audit/index'
+import { Route as AdminAdminsIndexRouteImport } from './routes/admin/admins/index'
 import { Route as ApiWebhooksStripeRouteImport } from './routes/api/webhooks/stripe'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AdminPaymentsNewRouteImport } from './routes/admin/payments/new'
 import { Route as AdminMembersNewRouteImport } from './routes/admin/members/new'
 import { Route as AdminMembersIdRouteImport } from './routes/admin/members/$id'
+import { Route as AdminAdminsNewRouteImport } from './routes/admin/admins/new'
 
 const DonateRoute = DonateRouteImport.update({
   id: '/donate',
@@ -93,6 +96,16 @@ const AdminMembersIndexRoute = AdminMembersIndexRouteImport.update({
   path: '/members/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminAuditIndexRoute = AdminAuditIndexRouteImport.update({
+  id: '/audit/',
+  path: '/audit/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAdminsIndexRoute = AdminAdminsIndexRouteImport.update({
+  id: '/admins/',
+  path: '/admins/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const ApiWebhooksStripeRoute = ApiWebhooksStripeRouteImport.update({
   id: '/api/webhooks/stripe',
   path: '/api/webhooks/stripe',
@@ -118,6 +131,11 @@ const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
   path: '/members/$id',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminAdminsNewRoute = AdminAdminsNewRouteImport.update({
+  id: '/admins/new',
+  path: '/admins/new',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,11 +149,14 @@ export interface FileRoutesByFullPath {
   '/member/profile': typeof MemberProfileRoute
   '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
+  '/admin/admins/new': typeof AdminAdminsNewRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
   '/admin/members/new': typeof AdminMembersNewRoute
   '/admin/payments/new': typeof AdminPaymentsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/admin/admins/': typeof AdminAdminsIndexRoute
+  '/admin/audit/': typeof AdminAuditIndexRoute
   '/admin/members/': typeof AdminMembersIndexRoute
   '/admin/payments/': typeof AdminPaymentsIndexRoute
 }
@@ -149,11 +170,14 @@ export interface FileRoutesByTo {
   '/member/profile': typeof MemberProfileRoute
   '/admin': typeof AdminIndexRoute
   '/member': typeof MemberIndexRoute
+  '/admin/admins/new': typeof AdminAdminsNewRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
   '/admin/members/new': typeof AdminMembersNewRoute
   '/admin/payments/new': typeof AdminPaymentsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/admin/admins': typeof AdminAdminsIndexRoute
+  '/admin/audit': typeof AdminAuditIndexRoute
   '/admin/members': typeof AdminMembersIndexRoute
   '/admin/payments': typeof AdminPaymentsIndexRoute
 }
@@ -170,11 +194,14 @@ export interface FileRoutesById {
   '/member/profile': typeof MemberProfileRoute
   '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
+  '/admin/admins/new': typeof AdminAdminsNewRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
   '/admin/members/new': typeof AdminMembersNewRoute
   '/admin/payments/new': typeof AdminPaymentsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/webhooks/stripe': typeof ApiWebhooksStripeRoute
+  '/admin/admins/': typeof AdminAdminsIndexRoute
+  '/admin/audit/': typeof AdminAuditIndexRoute
   '/admin/members/': typeof AdminMembersIndexRoute
   '/admin/payments/': typeof AdminPaymentsIndexRoute
 }
@@ -192,11 +219,14 @@ export interface FileRouteTypes {
     | '/member/profile'
     | '/admin/'
     | '/member/'
+    | '/admin/admins/new'
     | '/admin/members/$id'
     | '/admin/members/new'
     | '/admin/payments/new'
     | '/api/auth/$'
     | '/api/webhooks/stripe'
+    | '/admin/admins/'
+    | '/admin/audit/'
     | '/admin/members/'
     | '/admin/payments/'
   fileRoutesByTo: FileRoutesByTo
@@ -210,11 +240,14 @@ export interface FileRouteTypes {
     | '/member/profile'
     | '/admin'
     | '/member'
+    | '/admin/admins/new'
     | '/admin/members/$id'
     | '/admin/members/new'
     | '/admin/payments/new'
     | '/api/auth/$'
     | '/api/webhooks/stripe'
+    | '/admin/admins'
+    | '/admin/audit'
     | '/admin/members'
     | '/admin/payments'
   id:
@@ -230,11 +263,14 @@ export interface FileRouteTypes {
     | '/member/profile'
     | '/admin/'
     | '/member/'
+    | '/admin/admins/new'
     | '/admin/members/$id'
     | '/admin/members/new'
     | '/admin/payments/new'
     | '/api/auth/$'
     | '/api/webhooks/stripe'
+    | '/admin/admins/'
+    | '/admin/audit/'
     | '/admin/members/'
     | '/admin/payments/'
   fileRoutesById: FileRoutesById
@@ -341,6 +377,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMembersIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/audit/': {
+      id: '/admin/audit/'
+      path: '/audit'
+      fullPath: '/admin/audit/'
+      preLoaderRoute: typeof AdminAuditIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/admins/': {
+      id: '/admin/admins/'
+      path: '/admins'
+      fullPath: '/admin/admins/'
+      preLoaderRoute: typeof AdminAdminsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/api/webhooks/stripe': {
       id: '/api/webhooks/stripe'
       path: '/api/webhooks/stripe'
@@ -376,15 +426,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMembersIdRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/admins/new': {
+      id: '/admin/admins/new'
+      path: '/admins/new'
+      fullPath: '/admin/admins/new'
+      preLoaderRoute: typeof AdminAdminsNewRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
 interface AdminRouteRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminAdminsNewRoute: typeof AdminAdminsNewRoute
   AdminMembersIdRoute: typeof AdminMembersIdRoute
   AdminMembersNewRoute: typeof AdminMembersNewRoute
   AdminPaymentsNewRoute: typeof AdminPaymentsNewRoute
+  AdminAdminsIndexRoute: typeof AdminAdminsIndexRoute
+  AdminAuditIndexRoute: typeof AdminAuditIndexRoute
   AdminMembersIndexRoute: typeof AdminMembersIndexRoute
   AdminPaymentsIndexRoute: typeof AdminPaymentsIndexRoute
 }
@@ -392,9 +452,12 @@ interface AdminRouteRouteChildren {
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminAdminsNewRoute: AdminAdminsNewRoute,
   AdminMembersIdRoute: AdminMembersIdRoute,
   AdminMembersNewRoute: AdminMembersNewRoute,
   AdminPaymentsNewRoute: AdminPaymentsNewRoute,
+  AdminAdminsIndexRoute: AdminAdminsIndexRoute,
+  AdminAuditIndexRoute: AdminAuditIndexRoute,
   AdminMembersIndexRoute: AdminMembersIndexRoute,
   AdminPaymentsIndexRoute: AdminPaymentsIndexRoute,
 }

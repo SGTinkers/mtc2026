@@ -133,6 +133,56 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(
   },
 );
 
+// ─── Admins ───
+
+export const getAdmins = createServerFn({ method: "GET" }).handler(
+  async () => {
+    await requireAdminSession();
+    return db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+      })
+      .from(user)
+      .where(eq(user.role, "admin"))
+      .orderBy(desc(user.createdAt));
+  },
+);
+
+export const createAdmin = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: { name: string; email: string; password: string }) => data,
+  )
+  .handler(async ({ data }) => {
+    await requireAdminSession();
+
+    const newUser = await auth.api.signUpEmail({
+      body: { email: data.email, password: data.password, name: data.name },
+    });
+
+    if (!newUser?.user) throw new Error("Failed to create user");
+
+    await db
+      .update(user)
+      .set({ role: "admin" })
+      .where(eq(user.id, newUser.user.id));
+
+    return newUser.user;
+  });
+
+export const updateAdminProfile = createServerFn({ method: "POST" })
+  .inputValidator((data: { name: string; email: string }) => data)
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+    await db
+      .update(user)
+      .set({ name: data.name, email: data.email })
+      .where(eq(user.id, session.user.id));
+    return { success: true };
+  });
+
 // ─── Plans ───
 
 export const getPlans = createServerFn({ method: "GET" }).handler(async () => {
@@ -935,6 +985,40 @@ export const cancelSubscription = createServerFn({ method: "POST" })
     });
 
     return { success: true };
+  });
+
+// ─── Audit logs ───
+
+export const getAuditLogs = createServerFn({ method: "GET" })
+  .inputValidator((data: { page?: number; pageSize?: number }) => data)
+  .handler(async ({ data }) => {
+    await requireAdminSession();
+    const page = data.page ?? 1;
+    const pageSize = data.pageSize ?? 20;
+    const offset = (page - 1) * pageSize;
+
+    const [rows, [{ total }]] = await Promise.all([
+      db
+        .select({
+          id: auditLog.id,
+          entityType: auditLog.entityType,
+          entityId: auditLog.entityId,
+          action: auditLog.action,
+          oldValue: auditLog.oldValue,
+          newValue: auditLog.newValue,
+          performedBy: auditLog.performedBy,
+          performerName: user.name,
+          createdAt: auditLog.createdAt,
+        })
+        .from(auditLog)
+        .leftJoin(user, eq(auditLog.performedBy, user.id))
+        .orderBy(desc(auditLog.createdAt))
+        .limit(pageSize)
+        .offset(offset),
+      db.select({ total: count() }).from(auditLog),
+    ]);
+
+    return { rows, total, page, pageSize };
   });
 
 export const createBillingPortalSession = createServerFn({

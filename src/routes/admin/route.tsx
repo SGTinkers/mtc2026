@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, redirect, useRouter, useMatch } from "@tanstack/react-router";
-import { LayoutDashboard, Users, CreditCard, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, ScrollText, Shield, LogOut } from "lucide-react";
 import { getServerSession } from "~/lib/server-auth.js";
 import { authClient } from "~/lib/auth-client.js";
 
@@ -21,6 +21,8 @@ const navItems = [
   { to: "/admin" as const, label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/members" as const, label: "Members", icon: Users },
   { to: "/admin/payments" as const, label: "Payments", icon: CreditCard },
+  { to: "/admin/audit" as const, label: "Audit Trail", icon: ScrollText },
+  { to: "/admin/admins" as const, label: "Admins", icon: Shield },
 ];
 
 function AdminLayout() {

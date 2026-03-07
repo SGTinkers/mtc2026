@@ -7,6 +7,7 @@ import { z } from "zod";
 
 const donateSearchSchema = z.object({
   success: z.boolean().optional().catch(undefined),
+  amount: z.coerce.number().int().positive().optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/donate")({
@@ -43,11 +44,13 @@ const PINTAR_PLUS_PREVIEW_PERKS = [
 ];
 
 function DonatePage() {
-  const { success } = Route.useSearch();
-  const [amount, setAmount] = useState<number | null>(null);
-  const [customAmount, setCustomAmount] = useState("");
-  const [isCustom, setIsCustom] = useState(false);
-  const [showCustom, setShowCustom] = useState(false);
+  const { success, amount: defaultAmount } = Route.useSearch();
+  const isPreset = defaultAmount !== undefined && PRESET_AMOUNTS.includes(defaultAmount);
+  const isDefaultCustom = defaultAmount !== undefined && !isPreset;
+  const [amount, setAmount] = useState<number | null>(isPreset ? defaultAmount : null);
+  const [customAmount, setCustomAmount] = useState(isDefaultCustom ? String(defaultAmount) : "");
+  const [isCustom, setIsCustom] = useState(isDefaultCustom);
+  const [showCustom, setShowCustom] = useState(isDefaultCustom);
   const [perksKey, setPerksKey] = useState(0);
   const [shimmerTick, setShimmerTick] = useState(0);
   const [initialLoad, setInitialLoad] = useState(true);

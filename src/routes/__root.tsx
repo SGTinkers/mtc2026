@@ -14,9 +14,10 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Skim Pintar - Masjid Ar-Raudhah" },
+      { title: "Masjid Ar-Raudhah" },
     ],
     links: [
+      { rel: "icon", href: "/logo.webp", type: "image/webp" },
       { rel: "stylesheet", href: appCss as string },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       {

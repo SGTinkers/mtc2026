@@ -64,16 +64,34 @@ function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
 
   useEffect(() => {
     if (!sessionId) return;
-    getCheckoutSubscriptionInfo({ data: { sessionId } })
-      .then((info) => {
-        if (info) {
-          setSubInfo(info as SubInfo);
-        } else {
-          setError(true);
+
+    let cancelled = false;
+    const maxTime = Date.now() + 2 * 60 * 1000; // 2 minutes
+    const pollInterval = 3000; // 3 seconds
+
+    async function poll() {
+      while (!cancelled && Date.now() < maxTime) {
+        try {
+          const info = await getCheckoutSubscriptionInfo({ data: { sessionId } });
+          if (cancelled) return;
+          if (info) {
+            setSubInfo(info as SubInfo);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // ignore and retry
         }
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+        await new Promise((r) => setTimeout(r, pollInterval));
+      }
+      if (!cancelled) {
+        setError(true);
+        setLoading(false);
+      }
+    }
+
+    poll();
+    return () => { cancelled = true; };
   }, [sessionId]);
 
   if (loading) {

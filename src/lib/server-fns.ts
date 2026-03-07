@@ -465,9 +465,9 @@ export const getMemberSubscriptions = createServerFn({
     .from(members)
     .where(eq(members.userId, session.user.id));
 
-  if (!member) return [];
+  if (!member) return { subscriptions: [], totalContributed: "0" };
 
-  return db
+  const subs = await db
     .select({
       id: subscriptions.id,
       status: subscriptions.status,
@@ -486,6 +486,20 @@ export const getMemberSubscriptions = createServerFn({
     .innerJoin(plans, eq(subscriptions.planId, plans.id))
     .where(eq(subscriptions.memberId, member.id))
     .orderBy(desc(subscriptions.createdAt));
+
+  const subIds = subs.map((s) => s.id);
+  let totalContributed = "0";
+  if (subIds.length > 0) {
+    const [result] = await db
+      .select({
+        total: sql<string>`coalesce(sum(${payments.amount}), 0)`,
+      })
+      .from(payments)
+      .where(sql`${payments.subscriptionId} in ${subIds}`);
+    totalContributed = result?.total ?? "0";
+  }
+
+  return { subscriptions: subs, totalContributed };
 });
 
 export const getMemberPayments = createServerFn({ method: "GET" }).handler(

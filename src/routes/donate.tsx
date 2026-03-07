@@ -7,6 +7,11 @@ import {
 } from "~/lib/server-fns.js";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import {
+  PINTAR_PERKS,
+  PINTAR_PLUS_ALL_PERKS,
+  PINTAR_PLUS_PREVIEW_PERKS,
+} from "~/lib/perks.js";
 
 const donateSearchSchema = z.object({
   success: z.boolean().optional().catch(undefined),
@@ -20,32 +25,6 @@ export const Route = createFileRoute("/donate")({
 });
 
 const PRESET_AMOUNTS = [5, 10, 20, 50];
-
-const PINTAR_PERKS = [
-  "Free funeral services",
-  "Ritual bathing & shrouding",
-  "Burial & transport",
-  "20% discount on religious courses",
-];
-
-const PINTAR_PLUS_ALL_PERKS = [
-  "Free funeral services",
-  "Ritual bathing & shrouding",
-  "Burial & transport",
-  "Coverage for immediate family",
-  "Same-address family members",
-  "50% discount on religious courses",
-  "50% discount for parents/in-laws",
-  "Extended funeral service coverage",
-];
-
-const PINTAR_PLUS_PREVIEW_PERKS = [
-  "All individual benefits",
-  "Coverage for immediate family",
-  "Same-address family members",
-  "50% discount for parents/in-laws",
-  "Extended funeral service coverage",
-];
 
 type SubInfo = {
   planName: string;

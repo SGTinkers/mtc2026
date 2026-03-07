@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getMemberSubscriptions } from "~/lib/server-fns.js";
 import { Badge } from "~/components/ui/badge.js";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card.js";
-import { ShieldCheck, ShieldAlert, ShieldX, Clock } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldX, Clock, Shield, Users, Check, Heart } from "lucide-react";
+import { PINTAR_PERKS, PINTAR_PLUS_ALL_PERKS } from "~/lib/perks.js";
 
 export const Route = createFileRoute("/member/")({
   loader: () => getMemberSubscriptions(),
@@ -48,7 +49,9 @@ const statusConfig = {
 };
 
 function MemberDashboard() {
-  const allSubscriptions = Route.useLoaderData();
+  const data = Route.useLoaderData();
+  const allSubscriptions = data.subscriptions;
+  const totalContributed = Number(data.totalContributed);
 
   if (!allSubscriptions?.length) {
     return (
@@ -96,6 +99,32 @@ function MemberDashboard() {
         </CardContent>
       </Card>
 
+      {/* Total Contributed */}
+      {totalContributed > 0 && (
+        <div
+          className="member-total-reveal relative mb-6 overflow-hidden rounded-2xl p-6 text-center"
+          style={{
+            background:
+              "linear-gradient(135deg, #FFFDF5 0%, #FEF3C7 100%)",
+          }}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20">
+              <Heart size={20} className="text-gold fill-gold" />
+            </div>
+            <p className="text-sm font-medium text-gd/70">
+              Total Contributed to Date
+            </p>
+            <p className="member-total-amount font-[family-name:var(--font-family-heading)] text-4xl font-bold text-gdeep">
+              ${totalContributed.toFixed(2)}
+            </p>
+            <p className="text-xs text-gd/50">
+              Jazakallahu khairan for your generosity
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Skim Details */}
       <Card>
         <CardHeader>
@@ -125,10 +154,6 @@ function MemberDashboard() {
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Course Discount</dt>
-              <dd className="mt-1 font-medium">{subscription.courseDiscount}%</dd>
-            </div>
-            <div>
               <dt className="text-sm text-muted-foreground">Start Date</dt>
               <dd className="mt-1 font-medium">{subscription.coverageStart}</dd>
             </div>
@@ -144,20 +169,77 @@ function MemberDashboard() {
                 </dd>
               </div>
             )}
-            {subscription.maxDependants !== null && (
-              <div>
-                <dt className="text-sm text-muted-foreground">Max Dependants</dt>
-                <dd className="mt-1 font-medium">{subscription.maxDependants}</dd>
-              </div>
-            )}
           </dl>
         </CardContent>
       </Card>
 
+      {/* Your Perks */}
+      {(() => {
+        const isPintarPlus = subscription.planSlug === "pintar_plus";
+        const perks = isPintarPlus ? PINTAR_PLUS_ALL_PERKS : PINTAR_PERKS;
+        return (
+          <div
+            className="gift-shimmer-auto relative mt-6 overflow-hidden rounded-[24px] border border-white/10"
+            style={{
+              background:
+                "linear-gradient(150deg, #032A21 0%, #085A44 60%, #0D7C5F 100%)",
+            }}
+          >
+            <div className="gift-shimmer member-card-shimmer" />
+
+            <div className="relative z-10 flex flex-col gap-5 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isPintarPlus ? (
+                    <Users size={18} className="text-gold" />
+                  ) : (
+                    <Shield size={18} className="text-mint" />
+                  )}
+                  <span className="font-[family-name:var(--font-family-heading)] text-lg font-bold text-white">
+                    Your Perks
+                  </span>
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold ${
+                    isPintarPlus
+                      ? "bg-gold/20 text-gold"
+                      : "bg-mint/20 text-mint"
+                  }`}
+                >
+                  {subscription.planName}
+                </span>
+              </div>
+
+              <div
+                className={`h-px ${isPintarPlus ? "bg-gold/20" : "bg-mint/20"}`}
+              />
+
+              <div className="member-perk-stagger flex flex-col gap-2.5">
+                {perks.map((perk) => (
+                  <div key={perk} className="flex items-center gap-2.5">
+                    <div
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                        isPintarPlus ? "bg-gold/20" : "bg-mint/20"
+                      }`}
+                    >
+                      <Check
+                        size={12}
+                        className={isPintarPlus ? "text-gold" : "text-mint"}
+                      />
+                    </div>
+                    <span className="text-sm text-white">{perk}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Past Donations */}
       {pastSubscriptions.length > 0 && (
         <div className="mt-8">
-          <h3 className="mb-4 text-lg font-semibold">Past Donations</h3>
+          <h3 className="mb-4 text-lg font-semibold">Past Skims</h3>
           <Card>
             <CardContent className="p-0">
               <table className="w-full text-sm">

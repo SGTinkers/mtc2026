@@ -94,7 +94,7 @@ function MemberLogin() {
                   Welcome back
                 </h2>
                 <p className="text-sm text-white/50">
-                  Sign in to manage your Skim Pintar coverage
+                  Sign in to your Skim Pintar portal
                 </p>
               </div>
 

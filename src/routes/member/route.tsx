@@ -5,7 +5,7 @@ import {
   redirect,
   useRouter,
 } from "@tanstack/react-router";
-import { Home, CreditCard, Users, Receipt, UserCircle, LogOut } from "lucide-react";
+import { Home, Users, Receipt, UserCircle, LogOut } from "lucide-react";
 import { getServerSession } from "~/lib/server-auth.js";
 import { authClient } from "~/lib/auth-client.js";
 
@@ -28,7 +28,6 @@ export const Route = createFileRoute("/member")({
 
 const navItems = [
   { to: "/member" as const, label: "Dashboard", icon: Home, exact: true },
-  { to: "/member/subscription" as const, label: "Subscription", icon: CreditCard },
   { to: "/member/dependants" as const, label: "Dependants", icon: Users },
   { to: "/member/payments" as const, label: "Payments", icon: Receipt },
   { to: "/member/profile" as const, label: "Profile", icon: UserCircle },

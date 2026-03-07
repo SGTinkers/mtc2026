@@ -77,7 +77,7 @@ function DependantsPage() {
       {!subscriptionId && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            No active subscription. Contact the mosque to get started.
+            No active skim. Contact the mosque to get started.
           </CardContent>
         </Card>
       )}
@@ -88,7 +88,7 @@ function DependantsPage() {
             <Users className="mb-4 h-12 w-12" />
             <p>Dependants are available on Skim Pintar Plus.</p>
             <p className="mt-1 text-sm">
-              Upgrade your plan to add dependants to your coverage.
+              Upgrade your tier to add dependants.
             </p>
           </CardContent>
         </Card>
@@ -100,7 +100,7 @@ function DependantsPage() {
             <Users className="mb-4 h-12 w-12" />
             <p>No dependants added yet.</p>
             <p className="mt-1 text-sm">
-              Add family members to extend your coverage to them.
+              Add family members to extend your skim benefits to them.
             </p>
             <Button className="mt-4" onClick={() => setShowForm(true)}>
               <Plus className="h-4 w-4" />
@@ -114,7 +114,7 @@ function DependantsPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Add Dependant</CardTitle>
-            <CardDescription>Add a family member to your coverage</CardDescription>
+            <CardDescription>Add a family member to your skim</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAdd} className="space-y-4">

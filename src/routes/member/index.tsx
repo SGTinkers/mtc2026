@@ -76,29 +76,10 @@ function MemberDashboard() {
     (coverageEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
   );
 
+  const formatDate = (d: Date) => d.toLocaleDateString("en-SG");
+
   return (
     <div>
-      <h2 className="mb-6 text-2xl font-bold">My Skim Pintar</h2>
-
-      {/* Status Card */}
-      <Card className={`mb-6 border-2 ${config.bg}`}>
-        <CardContent className="flex items-center gap-6 p-8">
-          <StatusIcon className={`h-16 w-16 ${config.color}`} />
-          <div>
-            <Badge variant={config.variant} className="mb-2 text-sm">
-              {config.label}
-            </Badge>
-            <p className="text-lg font-semibold">
-              {subscription.status === "active"
-                ? `Active until ${coverageEnd.toLocaleDateString()}`
-                : subscription.status === "grace"
-                  ? `Grace period — ${daysLeft} days remaining`
-                  : `Ended ${coverageEnd.toLocaleDateString()}`}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Total Contributed */}
       {totalContributed > 0 && (
         <div
@@ -125,6 +106,27 @@ function MemberDashboard() {
         </div>
       )}
 
+      <h2 className="mb-6 text-2xl font-bold">My Skim Pintar</h2>
+
+      {/* Status Card */}
+      <Card className={`mb-6 border-2 ${config.bg}`}>
+        <CardContent className="flex items-center gap-6 p-8">
+          <StatusIcon className={`h-16 w-16 ${config.color}`} />
+          <div>
+            <Badge variant={config.variant} className="mb-2 text-sm">
+              {config.label}
+            </Badge>
+            <p className="text-lg font-semibold">
+              {subscription.status === "active"
+                ? `Active until ${formatDate(coverageEnd)}`
+                : subscription.status === "grace"
+                  ? `Grace period — ${daysLeft} days remaining`
+                  : `Ended ${formatDate(coverageEnd)}`}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Skim Details */}
       <Card>
         <CardHeader>
@@ -145,12 +147,6 @@ function MemberDashboard() {
               <dt className="text-sm text-muted-foreground">Monthly Contribution</dt>
               <dd className="mt-1 text-lg font-semibold">
                 ${Number(subscription.monthlyAmount).toFixed(2)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">Payment Method</dt>
-              <dd className="mt-1 font-medium capitalize">
-                {subscription.paymentMethod}
               </dd>
             </div>
             <div>

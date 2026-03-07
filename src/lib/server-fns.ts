@@ -520,10 +520,11 @@ export const getMemberPayments = createServerFn({ method: "GET" }).handler(
 
     if (subIds.length === 0) return [];
 
+    const ids = subIds.map((s) => s.id);
     return db
       .select()
       .from(payments)
-      .where(eq(payments.subscriptionId, subIds[0]!.id))
+      .where(sql`${payments.subscriptionId} in ${ids}`)
       .orderBy(desc(payments.createdAt));
   },
 );

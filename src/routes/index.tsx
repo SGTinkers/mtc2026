@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Lightbulb, GraduationCap, BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -157,29 +157,17 @@ function LandingPage() {
           <div className="flex w-full max-w-md lg:max-w-lg flex-col md:mx-auto">
             {[
               {
-                icon: (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white">
-                    <path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 1 4 12.9V17H8v-2.1A7 7 0 0 1 12 2z" />
-                  </svg>
-                ),
+                icon: <Lightbulb className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white" />,
                 title: "Lights stay on",
                 desc: "Electricity & air-conditioning for 5 daily prayers",
               },
               {
-                icon: (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white">
-                    <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 16" />
-                  </svg>
-                ),
+                icon: <GraduationCap className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white" />,
                 title: "Asatizah keep teaching",
                 desc: "Salaries for the people who lead prayers & guide the community",
               },
               {
-                icon: (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white">
-                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /><path d="M8 7h6" /><path d="M8 11h4" />
-                  </svg>
-                ),
+                icon: <BookOpen className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white" />,
                 title: "Knowledge keeps flowing",
                 desc: "Religious classes, Quran recitations & youth programmes",
                 last: true,

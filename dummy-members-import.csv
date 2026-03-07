@@ -1,0 +1,5 @@
+Name,Email,Phone,NRIC,DOB,Address,PostalCode,Plan,MonthlyAmount,Dependants
+Ali Bin Abu,ali.abu@example.com,91234567,S1234567A,1980-05-15,"123 Tampines St 11, #05-10",520123,Pintar,10,
+Siti Binti Ahmad,siti.ahmad@example.com,81234567,S7654321B,1985-08-20,"456 Pasir Ris Dr 6, #10-22",510456,Pintar Plus,30,Omar Bin Kamal:child | Nurul Binti Kamal:child
+John Doe,john.doe@example.com,98765432,S2345678C,1990-12-01,"789 Bedok North Ave 4, #02-15",460789,Pintar,15,Jane Doe:spouse
+Jane Smith,jane.smith@example.com,87654321,S8765432D,1995-03-10,"321 Woodlands St 32, #08-08",730321,Pintar Plus,50,Tom Smith:child | Jerry Smith:child | Mary Smith:parent

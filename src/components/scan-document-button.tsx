@@ -2,16 +2,34 @@ import { useRef, useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { extractFormFromImage, type ScannedFormData } from "~/lib/server-fns.js";
 
-function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> {
+function imageToJpegBase64(file: File): Promise<{ data: string; mediaType: string }> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.split(",")[1]!;
-      resolve({ data: base64, mediaType: file.type });
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      // Cap the longest side at 2048px to keep payload reasonable
+      const maxDim = 2048;
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      URL.revokeObjectURL(url);
+      const base64 = dataUrl.split(",")[1]!;
+      resolve({ data: base64, mediaType: "image/jpeg" });
     };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
+    img.src = url;
   });
 }
 
@@ -47,7 +65,7 @@ export function ScanDocumentButton({
     setScanning(true);
 
     try {
-      const { data, mediaType } = await fileToBase64(file);
+      const { data, mediaType } = await imageToJpegBase64(file);
       const result = await extractFormFromImage({ data: { image: data, mediaType } });
 
       const hasData = Object.keys(result).length > 0;

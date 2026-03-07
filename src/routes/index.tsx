@@ -33,13 +33,20 @@ function LandingPage() {
     <div className="min-h-screen bg-cream font-[family-name:var(--font-family-body)]">
       {/* Hero Section */}
       <section
-        className="flex flex-col items-center pb-20 pt-16 lg:pb-32 lg:pt-24 2xl:pb-40 2xl:pt-32"
-        style={{
-          background:
-            "linear-gradient(170deg, #032A21 0%, #085A44 25%, #0D7C5F 55%, #2DD4A8 100%)",
-        }}
+        className="relative flex flex-col items-center pb-20 pt-16 lg:pb-32 lg:pt-24 2xl:pb-40 2xl:pt-32 overflow-hidden"
       >
-        <div className={`${cx} hero-animate flex flex-col items-center gap-4 lg:gap-6 2xl:gap-8`}>
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/carousel/5.jpg')", filter: "brightness(0.15)" }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(170deg, rgba(3,42,33,0.80) 0%, rgba(8,90,68,0.75) 25%, rgba(13,124,95,0.72) 55%, rgba(45,212,168,0.70) 100%)",
+          }}
+        />
+        <div className={`${cx} relative z-10 hero-animate flex flex-col items-center gap-4 lg:gap-6 2xl:gap-8`}>
           <img src="/logo.webp" alt="Masjid Ar-Raudhah" className="h-20 lg:h-28 2xl:h-36 w-auto" />
 
           <h1 className="max-w-sm lg:max-w-2xl text-center font-[family-name:var(--font-family-heading)] text-4xl lg:text-6xl 2xl:text-7xl leading-[1.1] font-bold tracking-tight text-white">
@@ -109,6 +116,22 @@ function LandingPage() {
             Be one of them
             <ArrowRight size={14} className="lg:h-4 lg:w-4" />
           </Link>
+
+          {/* Carousel */}
+          <div className="reveal reveal-delay-5 carousel-fade-mask w-screen overflow-hidden pt-4">
+            <div className="carousel-track flex gap-3">
+              {[...Array(2)].flatMap((_, dup) =>
+                [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                  <img
+                    key={`${dup}-${n}`}
+                    src={`/carousel/${n}.jpg`}
+                    alt=""
+                    className="h-32 lg:h-40 2xl:h-48 w-auto rounded-xl object-cover flex-shrink-0"
+                  />
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -270,7 +293,7 @@ function LandingPage() {
               <button
                 key={val}
                 onClick={() => setSelectedAmount(val)}
-                className={`flex w-[100px] lg:w-[140px] 2xl:w-[160px] flex-col items-center gap-0.5 rounded-2xl lg:rounded-3xl p-5 lg:p-8 2xl:p-10 transition-all duration-300 cursor-pointer ${selectedAmount === val
+                className={`flex flex-1 flex-col items-center gap-0.5 rounded-2xl lg:rounded-3xl p-5 lg:p-8 2xl:p-10 transition-all duration-300 cursor-pointer ${selectedAmount === val
                   ? "border-2 border-gold bg-white/12"
                   : "border-2 border-white/12 bg-white/[0.06] hover:border-white/25"
                   }`}
@@ -490,8 +513,8 @@ if(typeof window!=='undefined'){
     },{threshold:0.15,rootMargin:'0px 0px -30px 0px'});
     els.forEach(function(el){o.observe(el)});
   }
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',initReveal)}
-  else{requestAnimationFrame(initReveal)}
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(initReveal,100)})}
+  else{setTimeout(initReveal,100)}
 }
 `,
         }}

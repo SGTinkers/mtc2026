@@ -570,6 +570,20 @@
   animation: success-next-steps-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.4s forwards;
 }
 
+/* ── Infinite carousel ── */
+@keyframes carousel-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.carousel-track {
+  animation: carousel-scroll 40s linear infinite;
+  width: max-content;
+}
+.carousel-fade-mask {
+  mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
 /* Auto-playing shimmer for donate page cards */
 .auto-shimmer::after {
   content: '';

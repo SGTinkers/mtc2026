@@ -421,6 +421,155 @@
   animation: shimmer-sweep 0.9s ease-in-out 0.2s forwards;
 }
 
+/* ── Success page animations ── */
+
+/* Loading pulse */
+@keyframes success-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.05); }
+}
+.success-loading-pulse {
+  animation: success-pulse 1.8s ease-in-out infinite;
+}
+
+/* Checkmark pop with rotation */
+@keyframes success-check-pop {
+  0%   { opacity: 0; transform: scale(0) rotate(-30deg); }
+  50%  { opacity: 1; transform: scale(1.15) rotate(5deg); }
+  70%  { transform: scale(0.92) rotate(-2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.success-check-pop {
+  opacity: 0;
+  animation: success-check-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
+}
+
+/* Glow ring behind checkmark */
+@keyframes success-glow-ring {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  40%  { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+}
+.success-glow-ring {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(45, 212, 168, 0.4) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  animation: success-glow-ring 1.4s ease-out 0.2s forwards;
+}
+
+/* Confetti particles */
+.success-confetti-wrap {
+  position: relative;
+}
+.success-confetti-wrap::before,
+.success-confetti-wrap::after {
+  content: '✦';
+  position: absolute;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+}
+.success-confetti-wrap::before {
+  top: 0;
+  right: -12px;
+  color: #F5C842;
+  animation: success-particle-1 1s ease-out 0.7s forwards;
+}
+.success-confetti-wrap::after {
+  bottom: 4px;
+  left: -12px;
+  color: #2DD4A8;
+  animation: success-particle-2 1s ease-out 0.8s forwards;
+}
+@keyframes success-particle-1 {
+  0%   { opacity: 0; transform: scale(0) translate(0, 0); }
+  40%  { opacity: 1; transform: scale(1.3) translate(10px, -16px); }
+  100% { opacity: 0; transform: scale(0.5) translate(18px, -28px); }
+}
+@keyframes success-particle-2 {
+  0%   { opacity: 0; transform: scale(0) translate(0, 0); }
+  40%  { opacity: 1; transform: scale(1.1) translate(-12px, 10px); }
+  100% { opacity: 0; transform: scale(0.4) translate(-20px, 22px); }
+}
+
+/* Hero staggered entrance (6 children) */
+.success-hero-animate > * {
+  opacity: 0;
+  animation: hero-fade-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.success-hero-animate > *:nth-child(1) { animation-delay: 0.05s; }
+.success-hero-animate > *:nth-child(2) { animation-delay: 0.15s; }
+.success-hero-animate > *:nth-child(3) { animation-delay: 0.3s; }
+.success-hero-animate > *:nth-child(4) { animation-delay: 0.5s; }
+.success-hero-animate > *:nth-child(5) { animation-delay: 0.65s; }
+.success-hero-animate > *:nth-child(6) { animation-delay: 0.8s; }
+
+/* Subscription card reveal */
+@keyframes success-card-reveal {
+  0%   { opacity: 0; transform: translateY(30px) scale(0.95); }
+  60%  { opacity: 1; transform: translateY(-4px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.success-card-reveal {
+  opacity: 0;
+  animation: success-card-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+}
+
+/* Card shimmer on success page */
+.success-card-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 40%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.1) 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  opacity: 0;
+}
+.success-card-reveal .success-card-shimmer::after {
+  opacity: 1;
+  animation: shimmer-sweep 1.2s ease-in-out 1.2s forwards;
+}
+
+/* Perk stagger for success page */
+.success-perk-stagger > * {
+  opacity: 0;
+  animation: perk-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.success-perk-stagger > *:nth-child(1) { animation-delay: 0.9s; }
+.success-perk-stagger > *:nth-child(2) { animation-delay: 0.98s; }
+.success-perk-stagger > *:nth-child(3) { animation-delay: 1.06s; }
+.success-perk-stagger > *:nth-child(4) { animation-delay: 1.14s; }
+.success-perk-stagger > *:nth-child(5) { animation-delay: 1.22s; }
+.success-perk-stagger > *:nth-child(6) { animation-delay: 1.30s; }
+.success-perk-stagger > *:nth-child(7) { animation-delay: 1.38s; }
+.success-perk-stagger > *:nth-child(8) { animation-delay: 1.46s; }
+
+/* Next steps card entrance */
+@keyframes success-next-steps-enter {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.success-next-steps {
+  opacity: 0;
+  animation: success-next-steps-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.4s forwards;
+}
+
 /* Auto-playing shimmer for donate page cards */
 .auto-shimmer::after {
   content: '';

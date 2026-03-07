@@ -1,12 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Users, Shield, CheckCircle } from "lucide-react";
-import { createDonateCheckout } from "~/lib/server-fns.js";
+import { ArrowRight, Check, Users, Shield, CheckCircle, Mail } from "lucide-react";
+import {
+  createDonateCheckout,
+  getCheckoutSubscriptionInfo,
+} from "~/lib/server-fns.js";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
 const donateSearchSchema = z.object({
   success: z.boolean().optional().catch(undefined),
+  session_id: z.string().optional().catch(undefined),
   amount: z.coerce.number().int().positive().optional().catch(undefined),
 });
 
@@ -43,8 +47,238 @@ const PINTAR_PLUS_PREVIEW_PERKS = [
   "Extended funeral service coverage",
 ];
 
+type SubInfo = {
+  planName: string;
+  planSlug: string;
+  monthlyAmount: string;
+  coverageStart: string;
+  coverageUntil: string;
+  courseDiscount: number;
+  maxDependants: number | null;
+};
+
+function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
+  const [subInfo, setSubInfo] = useState<SubInfo | null>(null);
+  const [loading, setLoading] = useState(!!sessionId);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    getCheckoutSubscriptionInfo({ data: { sessionId } })
+      .then((info) => {
+        if (info) setSubInfo(info as SubInfo);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [sessionId]);
+
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen font-[family-name:var(--font-family-body)] flex flex-col items-center justify-center px-6"
+        style={{
+          background:
+            "linear-gradient(170deg, #032A21 0%, #085A44 25%, #0D7C5F 55%, #2DD4A8 100%)",
+        }}
+      >
+        <div className="flex flex-col items-center gap-6">
+          <img
+            src="/logo.webp"
+            alt="Masjid Ar-Raudhah"
+            className="h-16 w-auto success-loading-pulse"
+          />
+          <p className="text-white/80 text-sm font-medium">
+            Setting up your membership...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (subInfo) {
+    const isPintarPlus = subInfo.planSlug === "pintar_plus";
+    const perks = isPintarPlus ? PINTAR_PLUS_ALL_PERKS : PINTAR_PERKS;
+
+    return (
+      <div className="min-h-screen font-[family-name:var(--font-family-body)]">
+        {/* Hero gradient section */}
+        <div
+          className="flex flex-col items-center pb-28 pt-12 lg:pb-32 lg:pt-16 px-6"
+          style={{
+            background:
+              "linear-gradient(170deg, #032A21 0%, #085A44 25%, #0D7C5F 55%, #2DD4A8 100%)",
+          }}
+        >
+          <div className="success-hero-animate flex flex-col items-center gap-4 lg:gap-5 max-w-md text-center">
+            <Link to="/">
+              <img
+                src="/logo.webp"
+                alt="Masjid Ar-Raudhah"
+                className="h-10 lg:h-14 w-auto"
+              />
+            </Link>
+
+            <div className="relative flex items-center justify-center">
+              <div className="success-glow-ring" />
+              <div className="success-confetti-wrap">
+                <div className="flex h-20 w-20 lg:h-24 lg:w-24 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm success-check-pop">
+                  <CheckCircle
+                    size={40}
+                    className="text-mint lg:!w-12 lg:!h-12"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <h1 className="font-[family-name:var(--font-family-heading)] text-3xl lg:text-4xl font-bold text-white">
+              Alhamdulillah!
+            </h1>
+            <p className="text-base lg:text-lg text-white/85">
+              You're now a{" "}
+              <span className="font-semibold text-white">
+                {subInfo.planName}
+              </span>{" "}
+              member
+            </p>
+          </div>
+        </div>
+
+        {/* Subscription card */}
+        <div className="mx-auto w-full max-w-md lg:max-w-xl px-6 -mt-20 lg:-mt-24">
+          <div
+            className="success-card-reveal relative overflow-hidden rounded-[24px] lg:rounded-[28px] border border-white/10"
+            style={{
+              background:
+                "linear-gradient(150deg, #032A21 0%, #085A44 60%, #0D7C5F 100%)",
+            }}
+          >
+            <div className="gift-shimmer success-card-shimmer" />
+
+            <div className="relative z-10 flex flex-col gap-5 p-6 lg:p-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isPintarPlus ? (
+                    <Users size={18} className="text-gold" />
+                  ) : (
+                    <Shield size={18} className="text-mint" />
+                  )}
+                  <span className="font-[family-name:var(--font-family-heading)] text-lg lg:text-xl font-bold text-white">
+                    {subInfo.planName}
+                  </span>
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-[11px] lg:text-xs font-bold ${
+                    isPintarPlus
+                      ? "bg-gold/20 text-gold"
+                      : "bg-mint/20 text-mint"
+                  }`}
+                >
+                  Active
+                </span>
+              </div>
+
+              <div className="flex items-baseline gap-1">
+                <span className="font-[family-name:var(--font-family-heading)] text-3xl lg:text-4xl font-bold text-white">
+                  ${subInfo.monthlyAmount}
+                </span>
+                <span className="text-sm text-white/50">/month</span>
+              </div>
+
+              <div
+                className={`h-px ${isPintarPlus ? "bg-gold/20" : "bg-mint/20"}`}
+              />
+
+              <div className="success-perk-stagger flex flex-col gap-2.5">
+                {perks.map((perk) => (
+                  <div key={perk} className="flex items-center gap-2.5">
+                    <div
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                        isPintarPlus ? "bg-gold/20" : "bg-mint/20"
+                      }`}
+                    >
+                      <Check
+                        size={12}
+                        className={isPintarPlus ? "text-gold" : "text-mint"}
+                      />
+                    </div>
+                    <span className="text-sm lg:text-base text-white">
+                      {perk}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Next steps + CTA */}
+        <div className="mx-auto w-full max-w-md lg:max-w-xl px-6 py-8 lg:py-12 flex flex-col gap-6 lg:gap-8">
+          <div className="success-next-steps flex flex-col items-center gap-3 rounded-2xl bg-white border border-gray-100 p-6 text-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-g1/10">
+              <Mail size={20} className="text-g1" />
+            </div>
+            <p className="font-semibold text-gd">Check your email</p>
+            <p className="text-sm text-txt2 leading-relaxed">
+              We've sent a login link to your email. Use it to access your
+              member portal and manage your subscription.
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center gap-3">
+            <Link
+              to="/"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-gold py-4 lg:py-5 font-bold lg:text-lg text-gdeep hover:brightness-105 transition-all donate-cta-glow"
+            >
+              Back to Homepage
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="border-t border-gray-200 bg-cream p-6">
+          <div className="mx-auto flex max-w-md flex-col items-center gap-1">
+            <img
+              src="/logo.webp"
+              alt="Masjid Ar-Raudhah"
+              className="h-8 w-auto opacity-40"
+            />
+            <span className="text-xs text-txt3">
+              Masjid Ar-Raudhah &middot; Skim Pintar
+            </span>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
+  // Fallback: no session_id or fetch failed
+  return (
+    <div className="min-h-screen bg-cream font-[family-name:var(--font-family-body)] flex flex-col items-center justify-center px-6">
+      <div className="success-hero-animate flex flex-col items-center gap-6 max-w-md text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-g1/10">
+          <CheckCircle size={40} className="text-g1" />
+        </div>
+        <h1 className="font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold text-gd">
+          Welcome to Skim Pintar!
+        </h1>
+        <p className="text-base text-txt2 leading-relaxed">
+          Your subscription is active. Check your email for a login link to
+          access your member portal.
+        </p>
+        <Link
+          to="/"
+          className="flex items-center gap-2 rounded-full bg-gold px-8 py-3 font-bold text-gdeep hover:brightness-105 transition-all"
+        >
+          Back to Homepage
+          <ArrowRight size={16} />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function DonatePage() {
-  const { success, amount: defaultAmount } = Route.useSearch();
+  const { success, session_id, amount: defaultAmount } = Route.useSearch();
   const isPreset = defaultAmount !== undefined && PRESET_AMOUNTS.includes(defaultAmount);
   const isDefaultCustom = defaultAmount !== undefined && !isPreset;
   const [amount, setAmount] = useState<number | null>(isPreset ? defaultAmount : null);
@@ -125,28 +359,7 @@ function DonatePage() {
   };
 
   if (success) {
-    return (
-      <div className="min-h-screen bg-cream font-[family-name:var(--font-family-body)] flex flex-col items-center justify-center px-6">
-        <div className="flex flex-col items-center gap-6 max-w-md text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-g1/10">
-            <CheckCircle size={40} className="text-g1" />
-          </div>
-          <h1 className="font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold text-gd">
-            Welcome to Skim Pintar!
-          </h1>
-          <p className="text-base text-txt2 leading-relaxed">
-            Your subscription is active. Check your email for a login link to access your member portal.
-          </p>
-          <Link
-            to="/"
-            className="flex items-center gap-2 rounded-full bg-gold px-8 py-3 font-bold text-gdeep hover:brightness-105 transition-all"
-          >
-            Back to Homepage
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </div>
-    );
+    return <DonateSuccessPage sessionId={session_id} />;
   }
 
   return (

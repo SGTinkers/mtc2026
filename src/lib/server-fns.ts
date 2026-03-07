@@ -568,11 +568,44 @@ export const createDonateCheckout = createServerFn({ method: "POST" })
         plan_id: plan.id,
         monthly_amount: String(data.monthlyAmount),
       },
-      success_url: `${env.BETTER_AUTH_URL}/donate?success=true`,
+      success_url: `${env.BETTER_AUTH_URL}/donate?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${env.BETTER_AUTH_URL}/donate`,
     });
 
     return { url: checkoutSession.url };
+  });
+
+// ─── Donate checkout info (no auth required) ───
+
+export const getCheckoutSubscriptionInfo = createServerFn({ method: "GET" })
+  .inputValidator((data: { sessionId: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const checkoutSession = await stripe.checkout.sessions.retrieve(
+        data.sessionId,
+      );
+
+      const stripeSubId = checkoutSession.subscription as string | null;
+      if (!stripeSubId) return null;
+
+      const [result] = await db
+        .select({
+          planName: plans.name,
+          planSlug: plans.slug,
+          monthlyAmount: subscriptions.monthlyAmount,
+          coverageStart: subscriptions.coverageStart,
+          coverageUntil: subscriptions.coverageUntil,
+          courseDiscount: plans.courseDiscount,
+          maxDependants: plans.maxDependants,
+        })
+        .from(subscriptions)
+        .innerJoin(plans, eq(subscriptions.planId, plans.id))
+        .where(eq(subscriptions.stripeSubscriptionId, stripeSubId));
+
+      return result ?? null;
+    } catch {
+      return null;
+    }
   });
 
 // ─── Stripe checkout ───

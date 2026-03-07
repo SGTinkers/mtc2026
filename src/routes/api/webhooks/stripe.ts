@@ -10,11 +10,12 @@ import {
   plans,
   auditLog,
 } from "~/db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import {
   sendPaymentReceivedEmail,
   sendPaymentFailedEmail,
   sendWelcomeEmail,
+  sendCoverageReactivatedEmail,
 } from "~/lib/notifications.js";
 import { auth } from "~/lib/auth.js";
 import type Stripe from "stripe";
@@ -101,6 +102,49 @@ async function handleWebhook(request: Request): Promise<Response> {
 
           console.log("[Webhook] Member ID", memberId);
 
+          const isExistingMember = !!existingMember;
+
+          // Cancel existing subscriptions before creating new one
+          if (isExistingMember) {
+            const existingSubs = await db
+              .select()
+              .from(subscriptions)
+              .where(
+                and(
+                  eq(subscriptions.memberId, memberId),
+                  ne(subscriptions.status, "cancelled"),
+                ),
+              );
+
+            for (const sub of existingSubs) {
+              if (sub.stripeSubscriptionId) {
+                try {
+                  await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+                  console.log("[Webhook] Cancelled Stripe subscription", sub.stripeSubscriptionId);
+                } catch (e) {
+                  console.warn("[Webhook] Failed to cancel Stripe subscription (may already be cancelled)", sub.stripeSubscriptionId, e);
+                }
+              }
+
+              await db
+                .update(subscriptions)
+                .set({
+                  status: "cancelled",
+                  cancelledAt: new Date(),
+                  updatedAt: new Date(),
+                })
+                .where(eq(subscriptions.id, sub.id));
+
+              await db.insert(auditLog).values({
+                entityType: "subscription",
+                entityId: sub.id,
+                action: "cancelled_for_resubscription",
+                newValue: { reason: "new_donation_checkout" },
+                performedBy: userId,
+              });
+            }
+          }
+
           // Create subscription
           const today = new Date().toISOString().split("T")[0]!;
           const nextMonth = new Date();
@@ -120,28 +164,37 @@ async function handleWebhook(request: Request): Promise<Response> {
 
           console.log("[Webhook] Subscription created");
 
-          // Send welcome email + magic link
-          try {
-            await sendWelcomeEmail(email, name);
-            console.log("[Webhook] Welcome email sent");
-          } catch (e) {
-            console.error("[Webhook] Failed to send welcome email", e);
-          }
-          try {
-            await auth.api.signInMagicLink({
-              body: { email },
-              headers: new Headers(),
-            });
-            console.log("[Webhook] Magic link sent");
-          } catch (e) {
-            console.error("[Webhook] Failed to send magic link", e);
+          // Send appropriate email
+          if (isExistingMember) {
+            try {
+              await sendCoverageReactivatedEmail(email);
+              console.log("[Webhook] Coverage reactivated email sent");
+            } catch (e) {
+              console.error("[Webhook] Failed to send reactivated email", e);
+            }
+          } else {
+            try {
+              await sendWelcomeEmail(email, name);
+              console.log("[Webhook] Welcome email sent");
+            } catch (e) {
+              console.error("[Webhook] Failed to send welcome email", e);
+            }
+            try {
+              await auth.api.signInMagicLink({
+                body: { email },
+                headers: new Headers(),
+              });
+              console.log("[Webhook] Magic link sent");
+            } catch (e) {
+              console.error("[Webhook] Failed to send magic link", e);
+            }
           }
 
           // Audit log
           await db.insert(auditLog).values({
             entityType: "member",
             entityId: memberId,
-            action: "self_registered",
+            action: isExistingMember ? "resubscribed" : "self_registered",
             newValue: { name, email, planId, source: "stripe_donate" },
             performedBy: userId,
           });

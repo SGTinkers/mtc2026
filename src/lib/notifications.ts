@@ -1,5 +1,13 @@
 import { Resend } from "resend";
 import { env } from "~/env.js";
+import MagicLinkEmail from "~/emails/magic-link.js";
+import WelcomeEmail from "~/emails/welcome.js";
+import PaymentReceivedEmail from "~/emails/payment-received.js";
+import PaymentFailedEmail from "~/emails/payment-failed.js";
+import GracePeriodEmail from "~/emails/grace-period.js";
+import CoverageLapsedEmail from "~/emails/coverage-lapsed.js";
+import CoverageReactivatedEmail from "~/emails/coverage-reactivated.js";
+import { createElement } from "react";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -21,14 +29,7 @@ export async function sendMagicLinkEmail(email: string, url: string) {
     from: FROM_EMAIL,
     to: email,
     subject: "Your Skim Pintar Login Link",
-    html: `
-      <h2>Login to Skim Pintar</h2>
-      <p>Click the link below to sign in to your account:</p>
-      <a href="${url}" style="display:inline-block;padding:12px 24px;background:#0f766e;color:#fff;text-decoration:none;border-radius:6px;">
-        Sign In
-      </a>
-      <p style="color:#666;margin-top:16px;">This link expires in 10 minutes.</p>
-    `,
+    react: createElement(MagicLinkEmail, { url }),
   });
 }
 
@@ -37,11 +38,7 @@ export async function sendWelcomeEmail(email: string, name: string) {
     from: FROM_EMAIL,
     to: email,
     subject: "Welcome to Skim Pintar",
-    html: `
-      <h2>Welcome, ${name}!</h2>
-      <p>You have been registered for the Skim Pintar welfare scheme at Masjid Ar-Raudhah.</p>
-      <p>You can log in to your member portal to view your coverage status and manage your subscription.</p>
-    `,
+    react: createElement(WelcomeEmail, { name }),
   });
 }
 
@@ -55,11 +52,7 @@ export async function sendPaymentReceivedEmail(
     from: FROM_EMAIL,
     to: email,
     subject: "Payment Received - Skim Pintar",
-    html: `
-      <h2>Payment Confirmed</h2>
-      <p>We have received your payment of <strong>$${amount}</strong> via ${method} for ${periodMonth}.</p>
-      <p>Your coverage has been extended. Thank you for your continued support.</p>
-    `,
+    react: createElement(PaymentReceivedEmail, { amount, method, periodMonth }),
   });
 }
 
@@ -67,20 +60,11 @@ export async function sendPaymentFailedEmail(
   email: string,
   attemptNumber: number,
 ) {
-  const urgency =
-    attemptNumber >= 3
-      ? "URGENT: This is the final attempt."
-      : `This is attempt ${attemptNumber} of 3.`;
-
   await send({
     from: FROM_EMAIL,
     to: email,
     subject: `Payment Failed - Action Required (Attempt ${attemptNumber})`,
-    html: `
-      <h2>Payment Failed</h2>
-      <p>We were unable to process your Skim Pintar subscription payment. ${urgency}</p>
-      <p>Please update your payment method to avoid coverage interruption.</p>
-    `,
+    react: createElement(PaymentFailedEmail, { attemptNumber }),
   });
 }
 
@@ -92,11 +76,7 @@ export async function sendGracePeriodEmail(
     from: FROM_EMAIL,
     to: email,
     subject: "Grace Period Started - Skim Pintar",
-    html: `
-      <h2>Grace Period Notice</h2>
-      <p>Your Skim Pintar coverage has entered a grace period. You have <strong>${daysRemaining} days</strong> remaining to make a payment.</p>
-      <p>Please make a payment to avoid losing your coverage.</p>
-    `,
+    react: createElement(GracePeriodEmail, { daysRemaining }),
   });
 }
 
@@ -105,11 +85,7 @@ export async function sendCoverageLapsedEmail(email: string) {
     from: FROM_EMAIL,
     to: email,
     subject: "Coverage Lapsed - Skim Pintar",
-    html: `
-      <h2>Coverage Lapsed</h2>
-      <p>Your Skim Pintar coverage has lapsed due to non-payment. You are no longer covered under the welfare scheme.</p>
-      <p>Please contact the mosque or make a payment to reactivate your coverage.</p>
-    `,
+    react: createElement(CoverageLapsedEmail),
   });
 }
 
@@ -118,9 +94,6 @@ export async function sendCoverageReactivatedEmail(email: string) {
     from: FROM_EMAIL,
     to: email,
     subject: "Coverage Reactivated - Skim Pintar",
-    html: `
-      <h2>Coverage Reactivated</h2>
-      <p>Your Skim Pintar coverage has been reactivated. You are now covered under the welfare scheme again.</p>
-    `,
+    react: createElement(CoverageReactivatedEmail),
   });
 }

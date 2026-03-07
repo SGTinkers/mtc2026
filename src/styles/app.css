@@ -284,6 +284,143 @@
   animation: glow-ring 1.2s ease-out 0.35s forwards;
 }
 
+/* ── Donate page animations ── */
+
+/* Staggered pop-in for amount buttons */
+@keyframes btn-pop-in {
+  0%   { opacity: 0; transform: scale(0.6) translateY(12px); }
+  60%  { opacity: 1; transform: scale(1.06) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.donate-btn-stagger > * {
+  opacity: 0;
+  animation: btn-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.donate-btn-stagger > *:nth-child(1) { animation-delay: 0.5s; }
+.donate-btn-stagger > *:nth-child(2) { animation-delay: 0.6s; }
+.donate-btn-stagger > *:nth-child(3) { animation-delay: 0.7s; }
+.donate-btn-stagger > *:nth-child(4) { animation-delay: 0.8s; }
+
+/* Perks section slide-up reveal (React-driven, plays on mount) */
+@keyframes perks-reveal {
+  0%   { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.perks-section-enter {
+  animation: perks-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Gift emoji bounce (donate page variant, plays immediately) */
+@keyframes gift-bounce {
+  0%   { opacity: 0; transform: scale(0) rotate(-15deg); }
+  40%  { opacity: 1; transform: scale(1.3) rotate(5deg); }
+  60%  { transform: scale(0.9) rotate(-3deg); }
+  80%  { transform: scale(1.1) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.donate-gift-emoji {
+  opacity: 0;
+  display: inline-block;
+  animation: gift-bounce 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+}
+
+/* Benefit card entrance */
+@keyframes card-slide-up {
+  0%   { opacity: 0; transform: translateY(24px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.donate-card-enter {
+  opacity: 0;
+  animation: card-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.donate-card-enter-1 { animation-delay: 0.3s; }
+.donate-card-enter-2 { animation-delay: 0.5s; }
+
+/* Staggered perk list items */
+@keyframes perk-fade-in {
+  0%   { opacity: 0; transform: translateX(-10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.donate-perk-stagger > * {
+  opacity: 0;
+  animation: perk-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.donate-perk-stagger > *:nth-child(1) { animation-delay: 0.4s; }
+.donate-perk-stagger > *:nth-child(2) { animation-delay: 0.48s; }
+.donate-perk-stagger > *:nth-child(3) { animation-delay: 0.56s; }
+.donate-perk-stagger > *:nth-child(4) { animation-delay: 0.64s; }
+.donate-perk-stagger > *:nth-child(5) { animation-delay: 0.72s; }
+.donate-perk-stagger > *:nth-child(6) { animation-delay: 0.80s; }
+.donate-perk-stagger > *:nth-child(7) { animation-delay: 0.88s; }
+.donate-perk-stagger > *:nth-child(8) { animation-delay: 0.96s; }
+
+/* CTA button pulse glow */
+@keyframes cta-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0); }
+  50%      { box-shadow: 0 0 20px 4px rgba(245, 200, 66, 0.25); }
+}
+.donate-cta-glow {
+  animation: cta-glow-pulse 2.5s ease-in-out 1s infinite;
+}
+
+/* Custom amount input slide-in */
+@keyframes input-slide-in {
+  0%   { opacity: 0; max-height: 0; transform: translateY(-8px); }
+  100% { opacity: 1; max-height: 80px; transform: translateY(0); }
+}
+.donate-input-enter {
+  animation: input-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+}
+
+/* Selected amount button glow pulse */
+@keyframes btn-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0.5); }
+  50%  { box-shadow: 0 0 18px 4px rgba(245, 200, 66, 0.3); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0); }
+}
+.donate-btn-selected {
+  animation: btn-glow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Card glow pulse on amount change */
+@keyframes card-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(45, 212, 168, 0.4); }
+  40%  { box-shadow: 0 0 20px 6px rgba(45, 212, 168, 0.2); }
+  100% { box-shadow: 0 0 0 0 rgba(45, 212, 168, 0); }
+}
+@keyframes card-glow-gold {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0.4); }
+  40%  { box-shadow: 0 0 20px 6px rgba(245, 200, 66, 0.2); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0); }
+}
+.donate-card-glow-mint {
+  animation: card-glow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.donate-card-glow-gold {
+  animation: card-glow-gold 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* One-shot shimmer on benefit cards when amount changes */
+.donate-card-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 40%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.1) 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  animation: shimmer-sweep 0.9s ease-in-out 0.2s forwards;
+}
+
 /* Auto-playing shimmer for donate page cards */
 .auto-shimmer::after {
   content: '';

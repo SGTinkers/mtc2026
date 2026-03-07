@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Users, Shield, CheckCircle } from "lucide-react";
 import { createDonateCheckout } from "~/lib/server-fns.js";
 import { zodValidator } from "@tanstack/zod-adapter";
@@ -44,21 +44,59 @@ const PINTAR_PLUS_PREVIEW_PERKS = [
 
 function DonatePage() {
   const { success } = Route.useSearch();
-  const [amount, setAmount] = useState(20);
+  const [amount, setAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [isCustom, setIsCustom] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
+  const [perksKey, setPerksKey] = useState(0);
+  const [shimmerTick, setShimmerTick] = useState(0);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const amountGridRef = useRef<HTMLDivElement>(null);
+  const prevTierRef = useRef<string | null>(null);
 
-  const effectiveAmount = isCustom ? Number(customAmount) || 0 : amount;
+  useEffect(() => {
+    const timer = setTimeout(() => setInitialLoad(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const effectiveAmount = isCustom ? Number(customAmount) || 0 : amount ?? 0;
+  const hasSelection = amount !== null || isCustom;
   const isPintarPlus = effectiveAmount >= 20;
   const isPintar = effectiveAmount >= 5;
 
+  const getTier = (amt: number) => {
+    if (amt >= 20) return "plus";
+    if (amt >= 5) return "pintar";
+    return "none";
+  };
+
+  const triggerChange = (newAmount: number) => {
+    const newTier = getTier(newAmount);
+    const oldTier = prevTierRef.current;
+    prevTierRef.current = newTier;
+
+    if (oldTier !== null && oldTier !== newTier) {
+      setPerksKey((k) => k + 1);
+    }
+    setShimmerTick((t) => t + 1);
+  };
+
   const handlePreset = (val: number) => {
+    triggerChange(val);
     setAmount(val);
     setIsCustom(false);
     setShowCustom(false);
     setCustomAmount("");
+  };
+
+  const handleUpgradeToPintarPlus = () => {
+    triggerChange(20);
+    setAmount(20);
+    setIsCustom(false);
+    setShowCustom(false);
+    setCustomAmount("");
+    amountGridRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,24 +183,22 @@ function DonatePage() {
             <label className="text-xs font-bold tracking-[0.5px] text-g2 uppercase">
               Monthly amount
             </label>
-            <div className="grid grid-cols-4 gap-2.5 lg:gap-3">
+            <div ref={amountGridRef} className={`${initialLoad ? "donate-btn-stagger" : ""} grid grid-cols-4 gap-2.5 lg:gap-3`}>
               {PRESET_AMOUNTS.map((val) => (
                 <button
                   key={val}
                   onClick={() => handlePreset(val)}
-                  className={`flex flex-col items-center gap-0.5 rounded-2xl py-4 lg:py-5 font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold transition-all ${
-                    !isCustom && amount === val
-                      ? "bg-gdeep text-gold ring-2 ring-gold/30 scale-[1.03]"
-                      : "bg-white text-gd border border-gray-200 hover:border-g1/30"
-                  }`}
+                  className={`flex flex-col items-center gap-0.5 rounded-2xl py-4 lg:py-5 font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold transition-all duration-300 ${!isCustom && amount === val
+                    ? "bg-gdeep text-gold ring-2 ring-gold/30 scale-[1.03] donate-btn-selected"
+                    : "bg-white text-gd border border-gray-200 hover:border-g1/30"
+                    }`}
                 >
                   <span>${val}</span>
                   <span
-                    className={`text-[10px] lg:text-xs font-medium ${
-                      !isCustom && amount === val
-                        ? "text-white/50"
-                        : "text-txt3"
-                    }`}
+                    className={`text-[10px] lg:text-xs font-medium ${!isCustom && amount === val
+                      ? "text-white/50"
+                      : "text-txt3"
+                      }`}
                   >
                     /mo
                   </span>
@@ -172,7 +208,7 @@ function DonatePage() {
 
             {/* Custom Amount */}
             {showCustom ? (
-              <div className="flex items-center gap-3 rounded-2xl border-2 border-g1/30 bg-white px-4 py-3.5 lg:py-4 transition-all">
+              <div className="donate-input-enter flex items-center gap-3 rounded-2xl border-2 border-g1/30 bg-white px-4 py-3.5 lg:py-4">
                 <span className="font-[family-name:var(--font-family-heading)] text-xl lg:text-2xl font-bold text-gd">
                   $
                 </span>
@@ -199,190 +235,190 @@ function DonatePage() {
             )}
           </div>
 
-          {/* Perks intro */}
-          <div className="flex flex-col items-center gap-2 text-center pt-2">
-            <span className="text-2xl">🎁</span>
-            <h2 className="font-[family-name:var(--font-family-heading)] text-xl lg:text-2xl font-bold text-gd">
-              A gift from your masjid
-            </h2>
-            <p className="max-w-sm text-sm lg:text-base leading-relaxed text-txt2">
-              As a thank you for your commitment, Masjid Ar-Raudhah honours
-              every monthly giver with special coverage and benefits under{" "}
-              <span className="font-semibold text-g1">Skim Pintar</span>.
-            </p>
-          </div>
-
-          {/* Skim Pintar Plus — single unified card when $20+ */}
-          {isPintarPlus ? (
-            <div
-              className="relative overflow-hidden rounded-[24px] lg:rounded-[28px] border-2 border-gold transition-all duration-500"
-              style={{
-                background:
-                  "linear-gradient(150deg, #032A21 0%, #085A44 60%, #0D7C5F 100%)",
-              }}
-            >
-              <div className="gift-shimmer auto-shimmer" />
-
-              <div className="relative z-10 flex flex-col gap-5 p-6 lg:p-8">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users size={18} className="text-gold" />
-                    <span className="font-[family-name:var(--font-family-heading)] text-lg lg:text-xl font-bold text-white">
-                      Skim Pintar Plus
-                    </span>
-                  </div>
-                  <span className="rounded-full bg-gold/20 px-3 py-1 text-[11px] lg:text-xs font-bold text-gold">
-                    Unlocked
-                  </span>
-                </div>
-
-                <p className="text-sm lg:text-base leading-relaxed text-white/70">
-                  You and your family are fully covered:
+          {hasSelection && (
+            <div className="perks-section-enter flex flex-col gap-6 lg:gap-8">
+              {/* Perks intro */}
+              <div className="flex flex-col items-center gap-2 text-center pt-2">
+                <span className="donate-gift-emoji text-2xl">🎁</span>
+                <h2 className="font-[family-name:var(--font-family-heading)] text-xl lg:text-2xl font-bold text-gd">
+                  A gift from your masjid
+                </h2>
+                <p className="max-w-sm text-sm lg:text-base leading-relaxed text-txt2">
+                  As a thank you for your commitment, Masjid Ar-Raudhah honours
+                  every monthly giver with special coverage and benefits under{" "}
+                  <span className="font-semibold text-g1">Skim Pintar</span>.
                 </p>
+              </div>
 
-                <div className="flex flex-col gap-2.5">
-                  {PINTAR_PLUS_ALL_PERKS.map((perk) => (
-                    <div key={perk} className="flex items-center gap-2.5">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20">
-                        <Check size={12} className="text-gold" />
+              {/* Skim Pintar Plus — single unified card when $20+ */}
+              {isPintarPlus ? (
+                <div
+                  className="relative overflow-hidden rounded-[24px] lg:rounded-[28px] border-2 border-gold transition-all duration-500"
+                  style={{
+                    background:
+                      "linear-gradient(150deg, #032A21 0%, #085A44 60%, #0D7C5F 100%)",
+                  }}
+                >
+                  <div key={`shimmer-plus-${shimmerTick}`} className="gift-shimmer donate-card-shimmer" />
+                  <div key={`glow-plus-${shimmerTick}`} className="donate-card-glow-gold absolute inset-0 rounded-[inherit] pointer-events-none" />
+
+                  <div className="relative z-10 flex flex-col gap-5 p-6 lg:p-8">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users size={18} className="text-gold" />
+                        <span className="font-[family-name:var(--font-family-heading)] text-lg lg:text-xl font-bold text-white">
+                          Skim Pintar Plus
+                        </span>
                       </div>
-                      <span className="text-sm lg:text-base text-white">
-                        {perk}
+                      <span className="rounded-full bg-gold/20 px-3 py-1 text-[11px] lg:text-xs font-bold text-gold">
+                        Unlocked
                       </span>
                     </div>
-                  ))}
+
+                    <p className="text-sm lg:text-base leading-relaxed text-white/70">
+                      You and your family are fully covered:
+                    </p>
+
+                    <div key={`plus-perks-${perksKey}`} className="donate-perk-stagger flex flex-col gap-2.5">
+                      {PINTAR_PLUS_ALL_PERKS.map((perk) => (
+                        <div key={perk} className="flex items-center gap-2.5">
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20">
+                            <Check size={12} className="text-gold" />
+                          </div>
+                          <span className="text-sm lg:text-base text-white">
+                            {perk}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {/* Skim Pintar Card */}
+                  <div
+                    className={`relative overflow-hidden rounded-[24px] lg:rounded-[28px] transition-all duration-500 ${isPintar ? "opacity-100" : "opacity-40"
+                      }`}
+                    style={{
+                      background:
+                        "linear-gradient(150deg, #032A21 0%, #0D7C5F 100%)",
+                    }}
+                  >
+                    <div key={`shimmer-pintar-${shimmerTick}`} className="gift-shimmer donate-card-shimmer" />
+                    <div key={`glow-pintar-${shimmerTick}`} className="donate-card-glow-mint absolute inset-0 rounded-[inherit] pointer-events-none" />
+
+                    <div className="relative z-10 flex flex-col gap-5 p-6 lg:p-8">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Shield size={18} className="text-mint" />
+                          <span className="font-[family-name:var(--font-family-heading)] text-lg lg:text-xl font-bold text-white">
+                            Skim Pintar
+                          </span>
+                        </div>
+                        {isPintar && (
+                          <span className="rounded-full bg-mint/20 px-3 py-1 text-[11px] lg:text-xs font-bold text-mint">
+                            Included
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-sm lg:text-base leading-relaxed text-white/70">
+                        {isPintar
+                          ? "Your monthly contribution automatically includes these benefits:"
+                          : "Donate $5/mo or more to unlock these benefits:"}
+                      </p>
+
+                      <div key={`pintar-perks-${perksKey}`} className="donate-perk-stagger flex flex-col gap-2.5">
+                        {PINTAR_PERKS.map((perk) => (
+                          <div key={perk} className="flex items-center gap-2.5">
+                            <div
+                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${isPintar ? "bg-mint/20" : "bg-white/10"
+                                }`}
+                            >
+                              <Check
+                                size={12}
+                                className={isPintar ? "text-mint" : "text-white/30"}
+                              />
+                            </div>
+                            <span
+                              className={`text-sm lg:text-base ${isPintar ? "text-white" : "text-white/40"
+                                }`}
+                            >
+                              {perk}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Skim Pintar Plus Nudge — clickable */}
+                  <button
+                    onClick={handleUpgradeToPintarPlus}
+                    className="group relative overflow-hidden rounded-[24px] lg:rounded-[28px] border-2 border-dashed border-gold/30 bg-gdeep/50 text-left transition-all duration-300 hover:border-gold/60 hover:bg-gdeep/70 cursor-pointer"
+                  >
+                    <div className="relative z-10 flex flex-col gap-5 p-6 lg:p-8">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users size={18} className="text-gold" />
+                          <span className="font-[family-name:var(--font-family-heading)] text-lg lg:text-xl font-bold text-white">
+                            Skim Pintar Plus
+                          </span>
+                        </div>
+                        <span className="rounded-full bg-gold/10 px-3 py-1 text-[11px] lg:text-xs font-semibold text-gold/60 group-hover:bg-gold/20 group-hover:text-gold transition-all">
+                          $20+/mo
+                        </span>
+                      </div>
+
+                      <p className="text-sm lg:text-base leading-relaxed text-white/70">
+                        Upgrade to $20/mo to extend coverage to your family:
+                      </p>
+
+                      <div className="flex flex-col gap-2.5">
+                        {PINTAR_PLUS_PREVIEW_PERKS.map((perk) => (
+                          <div key={perk} className="flex items-center gap-2.5">
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10">
+                              <Check size={12} className="text-white/30" />
+                            </div>
+                            <span className="text-sm lg:text-base text-white/40">
+                              {perk}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-center gap-2 rounded-full bg-gold/10 py-2.5 text-sm font-semibold text-gold group-hover:bg-gold/20 transition-all">
+                        Tap to upgrade
+                        <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                    </div>
+                  </button>
+                </>
+              )}
+
+              {/* CTA */}
+              <div className="flex flex-col items-center gap-3 pt-2">
+                <button
+                  onClick={handleCheckout}
+                  disabled={!isPintar || isLoading}
+                  className={`flex w-full items-center justify-center gap-2 rounded-full py-4 lg:py-5 font-bold lg:text-lg transition-all ${isPintar
+                    ? "bg-gold text-gdeep hover:brightness-105 donate-cta-glow"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                >
+                  {isLoading
+                    ? "Redirecting to checkout\u2026"
+                    : isPintar
+                      ? `Continue with $${effectiveAmount}/mo`
+                      : "Select at least $5/mo"}
+                  {isPintar && !isLoading && <ArrowRight size={18} />}
+                </button>
+                <p className="text-center text-xs text-txt3">
+                  Secure payment via Stripe · Cancel anytime
+                </p>
               </div>
             </div>
-          ) : (
-            <>
-              {/* Skim Pintar Card */}
-              <div
-                className={`relative overflow-hidden rounded-[24px] lg:rounded-[28px] transition-all duration-500 ${
-                  isPintar ? "opacity-100" : "opacity-40"
-                }`}
-                style={{
-                  background:
-                    "linear-gradient(150deg, #032A21 0%, #0D7C5F 100%)",
-                }}
-              >
-                {isPintar && <div className="gift-shimmer auto-shimmer" />}
-
-                <div className="relative z-10 flex flex-col gap-5 p-6 lg:p-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Shield size={18} className="text-mint" />
-                      <span className="font-[family-name:var(--font-family-heading)] text-lg lg:text-xl font-bold text-white">
-                        Skim Pintar
-                      </span>
-                    </div>
-                    {isPintar && (
-                      <span className="rounded-full bg-mint/20 px-3 py-1 text-[11px] lg:text-xs font-bold text-mint">
-                        Included
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-sm lg:text-base leading-relaxed text-white/70">
-                    {isPintar
-                      ? "Your monthly contribution automatically includes these benefits:"
-                      : "Donate $5/mo or more to unlock these benefits:"}
-                  </p>
-
-                  <div className="flex flex-col gap-2.5">
-                    {PINTAR_PERKS.map((perk) => (
-                      <div key={perk} className="flex items-center gap-2.5">
-                        <div
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                            isPintar ? "bg-mint/20" : "bg-white/10"
-                          }`}
-                        >
-                          <Check
-                            size={12}
-                            className={isPintar ? "text-mint" : "text-white/30"}
-                          />
-                        </div>
-                        <span
-                          className={`text-sm lg:text-base ${
-                            isPintar ? "text-white" : "text-white/40"
-                          }`}
-                        >
-                          {perk}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Skim Pintar Plus Nudge */}
-              <div className="relative overflow-hidden rounded-[24px] lg:rounded-[28px] border-2 border-dashed border-gold/30 bg-gdeep/50 opacity-70 transition-all duration-500">
-                <div className="relative z-10 flex flex-col gap-5 p-6 lg:p-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Users size={18} className="text-gold" />
-                      <span className="font-[family-name:var(--font-family-heading)] text-lg lg:text-xl font-bold text-white">
-                        Skim Pintar Plus
-                      </span>
-                    </div>
-                    <span className="rounded-full bg-gold/10 px-3 py-1 text-[11px] lg:text-xs font-semibold text-gold/60">
-                      $20+/mo
-                    </span>
-                  </div>
-
-                  <p className="text-sm lg:text-base leading-relaxed text-white/70">
-                    Upgrade to $20/mo to extend coverage to your family:
-                  </p>
-
-                  <div className="flex flex-col gap-2.5">
-                    {PINTAR_PLUS_PREVIEW_PERKS.map((perk) => (
-                      <div key={perk} className="flex items-center gap-2.5">
-                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10">
-                          <Check size={12} className="text-white/30" />
-                        </div>
-                        <span className="text-sm lg:text-base text-white/40">
-                          {perk}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {isPintar && (
-                    <button
-                      onClick={() => handlePreset(20)}
-                      className="flex items-center justify-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-5 py-2.5 text-sm font-semibold text-gold transition-all hover:bg-gold/20"
-                    >
-                      Upgrade to $20/mo for family coverage
-                      <ArrowRight size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </>
           )}
-
-          {/* CTA */}
-          <div className="flex flex-col items-center gap-3 pt-2">
-            <button
-              onClick={handleCheckout}
-              disabled={!isPintar || isLoading}
-              className={`flex w-full items-center justify-center gap-2 rounded-full py-4 lg:py-5 font-bold lg:text-lg transition-all ${
-                isPintar
-                  ? "bg-gold text-gdeep hover:brightness-105"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              {isLoading
-                ? "Redirecting to checkout…"
-                : isPintar
-                  ? `Continue with $${effectiveAmount}/mo`
-                  : "Select at least $5/mo"}
-              {isPintar && !isLoading && <ArrowRight size={18} />}
-            </button>
-            <p className="text-center text-xs text-txt3">
-              Secure payment via Stripe · Cancel anytime
-            </p>
-          </div>
         </div>
       </div>
 

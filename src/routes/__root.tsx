@@ -1,9 +1,10 @@
 import {
+  HeadContent,
   Outlet,
+  Scripts,
   ScrollRestoration,
   createRootRoute,
 } from "@tanstack/react-router";
-import { Meta, Scripts } from "@tanstack/react-start";
 import type { ReactNode } from "react";
 import appCss from "~/styles/app.css?url";
 
@@ -31,7 +32,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <Meta />
+        <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
         {children}

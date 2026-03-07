@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import { db } from "~/db/index.js";
 import {
   members,
@@ -10,14 +10,15 @@ import {
   user,
   auditLog,
 } from "~/db/schema.js";
-import { eq, desc, sql, and, count } from "drizzle-orm";
+import { eq, desc, sql, and, lt, count } from "drizzle-orm";
 import { auth } from "./auth.js";
+import { stripe } from "./stripe.js";
 import { sendWelcomeEmail, sendPaymentReceivedEmail } from "./notifications.js";
 
 // ─── Auth helpers ───
 
 async function getSession() {
-  const request = getWebRequest()!;
+  const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) throw new Error("Unauthorized");
   return session;
@@ -96,7 +97,7 @@ export const getMembers = createServerFn({ method: "GET" }).handler(
 );
 
 export const getMemberDetail = createServerFn({ method: "GET" })
-  .validator((id: string) => id)
+  .inputValidator((id: string) => id)
   .handler(async ({ data: memberId }) => {
     await requireAdminSession();
 
@@ -157,7 +158,7 @@ export const getMemberDetail = createServerFn({ method: "GET" })
 // ─── Register member (admin walk-in) ───
 
 export const registerMember = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     (data: {
       name: string;
       email: string;
@@ -239,7 +240,7 @@ export const registerMember = createServerFn({ method: "POST" })
 // ─── Record payment (admin) ───
 
 export const recordPayment = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     (data: {
       subscriptionId: string;
       amount: string;
@@ -475,7 +476,7 @@ export const getMemberDependants = createServerFn({ method: "GET" }).handler(
 );
 
 export const addDependant = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     (data: {
       subscriptionId: string;
       name: string;
@@ -504,7 +505,7 @@ export const addDependant = createServerFn({ method: "POST" })
   });
 
 export const removeDependant = createServerFn({ method: "POST" })
-  .validator((id: string) => id)
+  .inputValidator((id: string) => id)
   .handler(async ({ data: id }) => {
     await getSession();
     await db.delete(dependants).where(eq(dependants.id, id));
@@ -512,7 +513,7 @@ export const removeDependant = createServerFn({ method: "POST" })
   });
 
 export const updateMemberProfile = createServerFn({ method: "POST" })
-  .validator(
+  .inputValidator(
     (data: { phone?: string; address?: string }) => data,
   )
   .handler(async ({ data }) => {
@@ -534,3 +535,74 @@ export const updateMemberProfile = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+// ─── Stripe checkout ───
+
+export const createCheckoutSession = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: { subscriptionId: string; monthlyAmount: string }) => data,
+  )
+  .handler(async ({ data }) => {
+    const session = await getSession();
+
+    const [sub] = await db
+      .select({
+        id: subscriptions.id,
+        memberId: subscriptions.memberId,
+        email: user.email,
+      })
+      .from(subscriptions)
+      .innerJoin(members, eq(subscriptions.memberId, members.id))
+      .innerJoin(user, eq(members.userId, user.id))
+      .where(eq(subscriptions.id, data.subscriptionId));
+
+    if (!sub) throw new Error("Subscription not found");
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer_email: sub.email,
+      line_items: [
+        {
+          price_data: {
+            currency: "sgd",
+            product_data: {
+              name: "Skim Pintar Subscription",
+            },
+            unit_amount: Math.round(Number(data.monthlyAmount) * 100),
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        subscription_id: sub.id,
+      },
+      success_url: `${process.env.BETTER_AUTH_URL}/member/subscription?success=1`,
+      cancel_url: `${process.env.BETTER_AUTH_URL}/member/subscription`,
+    });
+
+    return { url: checkoutSession.url };
+  });
+
+export const createBillingPortalSession = createServerFn({
+  method: "POST",
+}).handler(async () => {
+  const session = await getSession();
+
+  const [sub] = await db
+    .select()
+    .from(subscriptions)
+    .innerJoin(members, eq(subscriptions.memberId, members.id))
+    .where(eq(members.userId, session.user.id));
+
+  if (!sub?.subscriptions.stripeCustomerId) {
+    throw new Error("No Stripe customer found");
+  }
+
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: sub.subscriptions.stripeCustomerId,
+    return_url: `${process.env.BETTER_AUTH_URL}/member/subscription`,
+  });
+
+  return { url: portalSession.url };
+});

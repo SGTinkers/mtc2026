@@ -63,11 +63,15 @@ export async function sendPaymentFailedEmail(
   email: string,
   attemptNumber: number,
 ) {
+  const memberPortalUrl = `${env.BETTER_AUTH_URL}/member`;
+  const isFinalAttempt = attemptNumber >= 3;
   await send({
     from: FROM_EMAIL,
     to: email,
-    subject: `Payment Failed - Action Required (Attempt ${attemptNumber})`,
-    react: createElement(PaymentFailedEmail, { attemptNumber }),
+    subject: isFinalAttempt
+      ? "URGENT: Payment Failed — Subscription Will Be Deactivated"
+      : `Payment Failed - Action Required (Attempt ${attemptNumber})`,
+    react: createElement(PaymentFailedEmail, { attemptNumber, memberPortalUrl }),
   });
 }
 

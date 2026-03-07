@@ -39,6 +39,7 @@ function ProfilePage() {
 
     await updateMemberProfile({
       data: {
+        name: form.get("name") as string,
         phone: form.get("phone") as string,
         address: form.get("address") as string,
       },
@@ -64,6 +65,15 @@ function ProfilePage() {
                 Profile updated successfully.
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                defaultValue={data.member.name ?? ""}
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>

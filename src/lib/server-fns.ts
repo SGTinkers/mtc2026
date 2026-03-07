@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { db } from "~/db/index.js";
@@ -515,15 +516,22 @@ export const removeDependant = createServerFn({ method: "POST" })
 
 export const updateMemberProfile = createServerFn({ method: "POST" })
   .inputValidator(
-    (data: { phone?: string; address?: string }) => data,
+    z.object({
+      name: z.string().min(1).optional(),
+      phone: z.string().optional(),
+      address: z.string().optional(),
+    }),
   )
   .handler(async ({ data }) => {
     const session = await getSession();
 
-    if (data.phone !== undefined) {
+    if (data.name !== undefined || data.phone !== undefined) {
+      const userUpdates: Record<string, string> = {};
+      if (data.name !== undefined) userUpdates.name = data.name;
+      if (data.phone !== undefined) userUpdates.phoneNumber = data.phone;
       await db
         .update(user)
-        .set({ phoneNumber: data.phone })
+        .set(userUpdates)
         .where(eq(user.id, session.user.id));
     }
 

@@ -370,12 +370,21 @@ export const getMemberDashboard = createServerFn({ method: "GET" }).handler(
   async () => {
     const session = await getSession();
 
-    const [member] = await db
-      .select()
+    const [memberRow] = await db
+      .select({
+        id: members.id,
+        userId: members.userId,
+        nric: members.nric,
+        address: members.address,
+        phone: user.phoneNumber,
+        email: user.email,
+        name: user.name,
+      })
       .from(members)
+      .innerJoin(user, eq(members.userId, user.id))
       .where(eq(members.userId, session.user.id));
 
-    if (!member) return null;
+    if (!memberRow) return null;
 
     const [sub] = await db
       .select({
@@ -393,11 +402,11 @@ export const getMemberDashboard = createServerFn({ method: "GET" }).handler(
       })
       .from(subscriptions)
       .innerJoin(plans, eq(subscriptions.planId, plans.id))
-      .where(eq(subscriptions.memberId, member.id))
+      .where(eq(subscriptions.memberId, memberRow.id))
       .orderBy(desc(subscriptions.createdAt))
       .limit(1);
 
-    return { member, subscription: sub ?? null };
+    return { member: memberRow, subscription: sub ?? null };
   },
 );
 

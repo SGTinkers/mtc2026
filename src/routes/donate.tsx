@@ -414,7 +414,7 @@ function DonatePage() {
                 <button
                   key={val}
                   onClick={() => handlePreset(val)}
-                  className={`flex flex-col items-center gap-0.5 rounded-2xl py-4 lg:py-5 font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold transition-all duration-300 ${!isCustom && amount === val
+                  className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-2xl py-4 lg:py-5 font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold transition-all duration-300 ${!isCustom && amount === val
                     ? "bg-gdeep text-gold ring-2 ring-gold/30"
                     : "bg-white text-gd border border-gray-200 hover:border-g1/30"
                     }`}
@@ -434,6 +434,7 @@ function DonatePage() {
 
             {/* Custom Amount */}
             {showCustom ? (
+            <>
               <div className="donate-input-enter flex items-center gap-3 rounded-2xl border-2 border-g1/30 bg-white px-4 py-3.5 lg:py-4">
                 <span className="font-[family-name:var(--font-family-heading)] text-xl lg:text-2xl font-bold text-gd">
                   $
@@ -451,10 +452,14 @@ function DonatePage() {
                   /month
                 </span>
               </div>
+              {customAmount && Number(customAmount) < 5 && (
+                <p className="text-xs text-red-500">Minimum amount is $5</p>
+              )}
+            </>
             ) : (
               <button
                 onClick={() => { setShowCustom(true); setIsCustom(true); }}
-                className="text-center text-sm font-medium text-g1 underline hover:text-g2 transition-colors"
+                className="cursor-pointer text-center text-sm font-medium text-g1 underline hover:text-g2 transition-colors"
               >
                 or choose a custom amount
               </button>
@@ -632,7 +637,7 @@ function DonatePage() {
                   onClick={handleCheckout}
                   disabled={!isPintar || isLoading}
                   className={`flex w-full items-center justify-center gap-2 rounded-full py-4 lg:py-5 font-bold lg:text-lg transition-all ${isPintar
-                    ? "bg-gold text-gdeep hover:brightness-105 donate-cta-glow"
+                    ? "cursor-pointer bg-gold text-gdeep hover:brightness-105 donate-cta-glow"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
                 >

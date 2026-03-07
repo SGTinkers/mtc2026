@@ -300,7 +300,7 @@ function LandingPage() {
               <button
                 key={val}
                 onClick={() => setSelectedAmount(val)}
-                className={`flex flex-1 flex-col items-center gap-0.5 rounded-2xl lg:rounded-3xl p-5 lg:p-8 2xl:p-10 transition-all duration-300 cursor-pointer ${selectedAmount === val
+                className={`flex aspect-square w-28 lg:w-36 2xl:w-44 flex-col items-center justify-center gap-0.5 rounded-2xl lg:rounded-3xl transition-all duration-300 cursor-pointer ${selectedAmount === val
                   ? "border-2 border-gold bg-white/12"
                   : "border-2 border-white/12 bg-white/[0.06] hover:border-white/25"
                   }`}

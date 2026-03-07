@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { getAdminStats } from "~/lib/server-fns.js";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "~/components/ui/card.js";
-import { Users, CreditCard, DollarSign, Clock, ArrowUpCircle, Heart, UserPlus } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
+import { Users, CreditCard, DollarSign, Clock, TrendingUp, Heart, UserPlus, ArrowRight } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart.js";
 
 export const Route = createFileRoute("/admin/")({
@@ -10,63 +10,70 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-// We use the CSS variables defined in app.css to perfectly match the theme
-const THEME_COLORS = [
-  'var(--color-primary)', // Teal #0f766e
-  'var(--color-mint)',    // Bright Green #2DD4A8
-  'var(--color-gold)',    // Yellow #F5C842
-  'var(--color-accent)',  // Light Teal #14b8a6
-  'var(--color-g1)',      // Deep Green #0D7C5F
-  'var(--color-txt2)'     // Slate #4A5568
+const CHART_COLORS = [
+  "#0f766e",
+  "#2DD4A8",
+  "#F5C842",
+  "#14b8a6",
+  "#0D7C5F",
+  "#64748b",
 ];
 
 function AdminDashboard() {
   const stats = Route.useLoaderData();
+  const { session } = Route.useRouteContext();
+
+  const firstName = session?.user?.name?.split(" ")[0] ?? "Admin";
 
   const cards = [
     {
       title: "Total Members",
       value: stats.totalMembers,
       icon: Users,
-      color: "var(--color-primary)",
+      iconBg: "bg-teal-50",
+      iconColor: "text-teal-600",
     },
     {
       title: "Active Subscriptions",
       value: stats.activeSubscriptions,
       icon: CreditCard,
-      color: "var(--color-mint)",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
     },
     {
-      title: "Monthly Recurring Revenue",
+      title: "Monthly Revenue",
       value: `$${Number(stats.mrr).toFixed(2)}`,
-      icon: ArrowUpCircle,
-      color: "var(--color-accent)",
+      icon: TrendingUp,
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
     },
     {
-      title: "Donations (This Month)",
+      title: "Donations (Month)",
       value: `$${Number(stats.donationsThisMonth).toFixed(2)}`,
       icon: Heart,
-      color: "var(--color-gold)",
+      iconBg: "bg-amber-50",
+      iconColor: "text-amber-600",
     },
     {
       title: "Total Revenue",
       value: `$${Number(stats.totalRevenue).toFixed(2)}`,
       icon: DollarSign,
-      color: "var(--color-g1)",
+      iconBg: "bg-green-50",
+      iconColor: "text-green-700",
     },
     {
       title: "Pending Payments",
       value: stats.pendingPayments,
       icon: Clock,
-      color: "var(--color-txt2)",
+      iconBg: "bg-slate-100",
+      iconColor: "text-slate-500",
     },
   ];
 
-  // Configure charts
   const revenueChartConfig = {
     revenue: {
       label: "Revenue",
-      color: "var(--color-primary)",
+      color: "#0f766e",
     },
   };
 
@@ -74,7 +81,7 @@ function AdminDashboard() {
     const name = plan.planName || "Unknown";
     acc[name] = {
       label: name,
-      color: THEME_COLORS[i % THEME_COLORS.length]!,
+      color: CHART_COLORS[i % CHART_COLORS.length]!,
     };
     return acc;
   }, {} as Record<string, { label: string; color: string }>);
@@ -82,126 +89,152 @@ function AdminDashboard() {
   const paymentChartConfig = stats.paymentMethods.reduce((acc, p, i) => {
     const method = p.method || "Other";
     acc[method] = {
-      label: method.replace('_', ' '),
-      color: THEME_COLORS[(i + 2) % THEME_COLORS.length]!,
+      label: method.replace("_", " "),
+      color: CHART_COLORS[(i + 2) % CHART_COLORS.length]!,
     };
     return acc;
   }, {} as Record<string, { label: string; color: string }>);
 
-  // Transform data for charts
   const planData = stats.planBreakdown.map((item, i) => ({
     name: item.planName || "Unknown",
     value: item.count,
-    fill: THEME_COLORS[i % THEME_COLORS.length]!
+    fill: CHART_COLORS[i % CHART_COLORS.length]!,
   }));
 
   const paymentData = stats.paymentMethods.map((item, i) => ({
-    name: (item.method || "Other").replace('_', ' '),
+    name: (item.method || "Other").replace("_", " "),
     value: item.count,
-    fill: THEME_COLORS[(i + 2) % THEME_COLORS.length]!
+    fill: CHART_COLORS[(i + 2) % CHART_COLORS.length]!,
   }));
 
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
-    <div className="flex flex-col gap-8 pb-10">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Dashboard</h2>
+    <div className="flex flex-col gap-6 pb-10 max-w-[1400px]">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">
+          Welcome back, {firstName}
+        </h2>
+        <p className="text-sm text-muted-foreground mt-0.5">{today}</p>
       </div>
-      
+
       {/* KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {cards.map((card) => (
-          <Card key={card.title} className="border-2 shadow-md transition-all hover:shadow-lg border-primary/10">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-primary/70 uppercase tracking-wider">
-                {card.title}
-              </CardTitle>
-              <card.icon className="h-6 w-6" style={{ color: card.color }} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold text-primary tabular-nums tracking-tight">
+          <Card
+            key={card.title}
+            className="border border-border/60 shadow-sm hover:shadow-md transition-shadow bg-white"
+          >
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${card.iconBg}`}>
+                  <card.icon className={`h-[18px] w-[18px] ${card.iconColor}`} />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-foreground tabular-nums tracking-tight">
                 {card.value}
               </div>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">{card.title}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Main Charts Area */}
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
-        
-        {/* Revenue Trend - Spans 4 columns on large screens */}
-        <Card className="col-span-4 flex flex-col border-2 shadow-md border-primary/10">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-xl font-bold text-primary">Revenue Overview</CardTitle>
-            <CardDescription className="text-sm text-primary/60">Monthly revenue for the past 12 months</CardDescription>
+      {/* Charts Row */}
+      <div className="grid gap-4 lg:grid-cols-7">
+        {/* Revenue Chart */}
+        <Card className="lg:col-span-4 border border-border/60 shadow-sm bg-white">
+          <CardHeader className="pb-0 px-6 pt-5">
+            <CardTitle className="text-base font-semibold text-foreground">Revenue Overview</CardTitle>
+            <CardDescription className="text-xs">Monthly revenue for the past 12 months</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 pt-6">
-            <ChartContainer config={revenueChartConfig} className="h-full min-h-[400px] w-full">
-              <AreaChart 
-                data={stats.monthlyRevenue} 
-                margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
+          <CardContent className="pt-4 px-2 pb-4">
+            <ChartContainer config={revenueChartConfig} className="h-[340px] w-full">
+              <AreaChart
+                data={stats.monthlyRevenue}
+                margin={{ top: 16, right: 24, left: 0, bottom: 8 }}
               >
                 <defs>
                   <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0.05}/>
+                    <stop offset="0%" stopColor="#0f766e" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#0f766e" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
-                <XAxis 
-                  dataKey="month" 
-                  stroke="var(--color-primary)" 
-                  fontSize={12} 
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="month"
+                  fontSize={11}
                   fontWeight={500}
-                  tickLine={false} 
-                  axisLine={false} 
+                  tickLine={false}
+                  axisLine={false}
                   tickFormatter={(value) => value.slice(0, 3)}
-                  tickMargin={12}
-                  style={{ opacity: 0.7 }}
+                  tickMargin={10}
+                  stroke="#94a3b8"
+                />
+                <YAxis
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `$${value}`}
+                  width={50}
+                  stroke="#94a3b8"
                 />
                 <ChartTooltip
-                  cursor={{ stroke: 'var(--color-primary)', strokeWidth: 1.5 }}
-                  content={<ChartTooltipContent 
-                    className="text-sm"
-                    formatter={(value) => `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                  />}
+                  cursor={{ stroke: "#cbd5e1", strokeWidth: 1 }}
+                  content={
+                    <ChartTooltipContent
+                      className="text-sm"
+                      formatter={(value) =>
+                        `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                      }
+                    />
+                  }
                 />
-                <Area 
-                  dataKey="revenue" 
-                  type="natural"
-                  fill="url(#fillRevenue)" 
+                <Area
+                  dataKey="revenue"
+                  type="monotone"
+                  fill="url(#fillRevenue)"
                   fillOpacity={1}
-                  stroke="var(--color-primary)"
-                  strokeWidth={3}
-                  animationDuration={1500}
+                  stroke="#0f766e"
+                  strokeWidth={2}
+                  animationDuration={1200}
                 />
               </AreaChart>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        {/* Plan Breakdown - Spans 3 columns on large screens */}
-        <Card className="col-span-3 flex flex-col border-2 shadow-md border-primary/10">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-primary">Membership Plans</CardTitle>
-            <CardDescription className="text-sm text-primary/60">Breakdown of active subscriptions</CardDescription>
+        {/* Plan Breakdown */}
+        <Card className="lg:col-span-3 border border-border/60 shadow-sm bg-white">
+          <CardHeader className="px-6 pt-5 pb-0">
+            <CardTitle className="text-base font-semibold text-foreground">Membership Plans</CardTitle>
+            <CardDescription className="text-xs">Active subscription breakdown</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-center items-center pb-8">
+          <CardContent className="flex-1 flex flex-col justify-center items-center pt-2 pb-6">
             {stats.planBreakdown.length > 0 ? (
               <>
-                <ChartContainer config={planChartConfig} className="mx-auto aspect-square max-h-[350px] w-full">
+                <ChartContainer
+                  config={planChartConfig}
+                  className="mx-auto aspect-square max-h-[260px] w-full"
+                >
                   <PieChart>
                     <ChartTooltip content={<ChartTooltipContent hideLabel className="text-sm" />} />
                     <Pie
                       data={planData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={70}
-                      outerRadius={100}
-                      paddingAngle={4}
+                      innerRadius={65}
+                      outerRadius={95}
+                      paddingAngle={3}
                       dataKey="value"
-                      strokeWidth={3}
-                      stroke="var(--color-background)"
+                      strokeWidth={2}
+                      stroke="#fff"
                     >
                       {planData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -209,46 +242,55 @@ function AdminDashboard() {
                     </Pie>
                   </PieChart>
                 </ChartContainer>
-                <div className="mt-4 flex flex-wrap justify-center gap-4">
+                <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
                   {planData.map((item, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.fill }} />
-                      <span className="text-xs font-semibold uppercase tracking-wide text-primary/70">{item.name}</span>
-                      <span className="text-md font-bold text-primary">{item.value}</span>
+                      <div
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: item.fill }}
+                      />
+                      <span className="text-xs text-muted-foreground">{item.name}</span>
+                      <span className="text-xs font-semibold text-foreground">{item.value}</span>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="text-primary/40 flex items-center justify-center h-full text-lg font-medium">No active subscriptions</div>
+              <div className="text-muted-foreground flex items-center justify-center h-full text-sm">
+                No active subscriptions
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Secondary Row */}
-      <div className="grid gap-8 md:grid-cols-2">
-        <Card className="flex flex-col border-2 shadow-md border-primary/10">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-primary">Payment Methods</CardTitle>
-            <CardDescription className="text-sm text-primary/60">Distribution of payment methods used</CardDescription>
+      {/* Bottom Row */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Payment Methods */}
+        <Card className="border border-border/60 shadow-sm bg-white">
+          <CardHeader className="px-6 pt-5 pb-0">
+            <CardTitle className="text-base font-semibold text-foreground">Payment Methods</CardTitle>
+            <CardDescription className="text-xs">Distribution of payment methods</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-center items-center pb-8">
-             {stats.paymentMethods.length > 0 ? (
+          <CardContent className="flex-1 flex flex-col justify-center items-center pt-2 pb-6">
+            {stats.paymentMethods.length > 0 ? (
               <>
-                <ChartContainer config={paymentChartConfig} className="mx-auto aspect-square max-h-[300px] w-full">
+                <ChartContainer
+                  config={paymentChartConfig}
+                  className="mx-auto aspect-square max-h-[240px] w-full"
+                >
                   <PieChart>
                     <ChartTooltip content={<ChartTooltipContent hideLabel className="text-sm" />} />
                     <Pie
                       data={paymentData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={4}
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={3}
                       dataKey="value"
-                      strokeWidth={3}
-                      stroke="var(--color-background)"
+                      strokeWidth={2}
+                      stroke="#fff"
                     >
                       {paymentData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -256,55 +298,73 @@ function AdminDashboard() {
                     </Pie>
                   </PieChart>
                 </ChartContainer>
-                <div className="mt-4 flex flex-wrap justify-center gap-4">
+                <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
                   {paymentData.map((item, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.fill }} />
-                      <span className="text-xs font-semibold uppercase tracking-wide text-primary/70">{item.name}</span>
-                      <span className="text-md font-bold text-primary">{item.value}</span>
+                      <div
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: item.fill }}
+                      />
+                      <span className="text-xs text-muted-foreground">{item.name}</span>
+                      <span className="text-xs font-semibold text-foreground">{item.value}</span>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="text-primary/40 flex items-center justify-center h-full text-lg font-medium">No payment data yet</div>
+              <div className="text-muted-foreground flex items-center justify-center h-full text-sm">
+                No payment data yet
+              </div>
             )}
           </CardContent>
         </Card>
-        
-        <Card className="border-2 shadow-md border-primary/10">
-           <CardHeader>
-            <CardTitle className="text-xl font-bold text-primary">Quick Actions</CardTitle>
-            <CardDescription className="text-sm text-primary/60">Common admin tasks</CardDescription>
+
+        {/* Quick Actions */}
+        <Card className="border border-border/60 shadow-sm bg-white">
+          <CardHeader className="px-6 pt-5 pb-3">
+            <CardTitle className="text-base font-semibold text-foreground">Quick Actions</CardTitle>
+            <CardDescription className="text-xs">Common admin tasks</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-6 pt-4">
-             <a href="/admin/members/new" className="flex items-center gap-6 p-6 rounded-2xl border-2 border-gold/30 bg-gold/5 hover:bg-gold/10 transition-all hover:scale-[1.01] hover:border-gold/50 group">
-               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/20 group-hover:bg-gold/30 transition-colors">
-                 <UserPlus className="h-7 w-7 text-gold" />
-               </div>
-               <div>
-                 <div className="text-lg font-bold text-primary">Walk-In Registration</div>
-                 <div className="text-sm text-primary/60 font-medium">Register a new member with the guided wizard</div>
-               </div>
-             </a>
-             <a href="/admin/members" className="flex items-center gap-6 p-6 rounded-2xl border-2 border-primary/10 hover:bg-primary/5 transition-all hover:scale-[1.01] hover:border-primary/30 group">
-               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                 <Users className="h-7 w-7 text-primary" />
-               </div>
-               <div>
-                 <div className="text-lg font-bold text-primary">Manage Members</div>
-                 <div className="text-sm text-primary/60 font-medium">Add or update member records</div>
-               </div>
-             </a>
-             <a href="/admin/payments" className="flex items-center gap-6 p-6 rounded-2xl border-2 border-primary/10 hover:bg-primary/5 transition-all hover:scale-[1.01] hover:border-mint/30 group">
-               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mint/10 group-hover:bg-mint/20 transition-colors">
-                 <DollarSign className="h-7 w-7 text-mint" />
-               </div>
-               <div>
-                 <div className="text-lg font-bold text-primary">Record Payments</div>
-                 <div className="text-sm text-primary/60 font-medium">Log incoming manual payments</div>
-               </div>
-             </a>
+          <CardContent className="flex flex-col gap-2 px-4 pb-5">
+            <Link
+              to="/admin/members/new"
+              className="flex items-center gap-4 px-4 py-3.5 rounded-xl border border-amber-200/60 bg-amber-50/40 hover:bg-amber-50 transition-colors group"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 group-hover:bg-amber-200/70 transition-colors">
+                <UserPlus className="h-[18px] w-[18px] text-amber-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-foreground">Walk-In Registration</div>
+                <div className="text-xs text-muted-foreground">Register a new member</div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
+            </Link>
+            <Link
+              to="/admin/members"
+              className="flex items-center gap-4 px-4 py-3.5 rounded-xl border border-border/40 hover:bg-muted/50 transition-colors group"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-slate-200/70 transition-colors">
+                <Users className="h-[18px] w-[18px] text-slate-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-foreground">Manage Members</div>
+                <div className="text-xs text-muted-foreground">View and update records</div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
+            </Link>
+            <Link
+              to="/admin/payments"
+              className="flex items-center gap-4 px-4 py-3.5 rounded-xl border border-border/40 hover:bg-muted/50 transition-colors group"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-50 group-hover:bg-teal-100/70 transition-colors">
+                <DollarSign className="h-[18px] w-[18px] text-teal-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-foreground">Record Payments</div>
+                <div className="text-xs text-muted-foreground">Log manual payments</div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
+            </Link>
           </CardContent>
         </Card>
       </div>

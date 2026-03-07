@@ -3,7 +3,7 @@ import { env } from "~/env.js";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-const FROM_EMAIL = "Skim Pintar <noreply@skimpintar.org>";
+const FROM_EMAIL = "Skim Pintar <onboarding@resend.dev>";
 
 export async function sendMagicLinkEmail(email: string, url: string) {
   await resend.emails.send({

@@ -40,14 +40,246 @@
   --font-family-body: 'Plus Jakarta Sans', sans-serif;
 }
 
-@media (min-width: 1024px) {
-  .landing-zoom {
-    zoom: 1.5;
-  }
+/* Desktop content centering — keeps mobile-like narrow layout on large screens */
+
+/* ── Scroll-triggered animations ── */
+
+/* Base: hidden before in view */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-@media (min-width: 1536px) {
-  .landing-zoom {
-    zoom: 1.75;
-  }
+/* Fade up (default) with stagger support */
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+
+/* Scale up variant */
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-scale.in-view {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Slide from left */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-left.in-view {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Slide from right */
+.reveal-right {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-right.in-view {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Hero entrance animation (plays on load) */
+@keyframes hero-fade-in {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-animate > * {
+  opacity: 0;
+  animation: hero-fade-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.hero-animate > *:nth-child(1) { animation-delay: 0.1s; }
+.hero-animate > *:nth-child(2) { animation-delay: 0.25s; }
+.hero-animate > *:nth-child(3) { animation-delay: 0.4s; }
+.hero-animate > *:nth-child(4) { animation-delay: 0.55s; }
+.hero-animate > *:nth-child(5) { animation-delay: 0.7s; }
+
+/* Hadith quote special animation */
+@keyframes quote-glow {
+  from { opacity: 0; transform: scale(0.95); filter: blur(4px); }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+.reveal-quote {
+  opacity: 0;
+  transition: none;
+}
+.reveal-quote.in-view {
+  animation: quote-glow 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Number counter pop */
+@keyframes number-pop {
+  0%   { opacity: 0; transform: scale(0.5) translateY(20px); }
+  60%  { transform: scale(1.08) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.reveal-pop {
+  opacity: 0;
+}
+.reveal-pop.in-view {
+  animation: number-pop 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animation delay support for keyframe-based variants */
+.reveal-pop.reveal-delay-1.in-view,
+.reveal-quote.reveal-delay-1.in-view { animation-delay: 0.1s; }
+.reveal-pop.reveal-delay-2.in-view,
+.reveal-quote.reveal-delay-2.in-view { animation-delay: 0.2s; }
+.reveal-pop.reveal-delay-3.in-view,
+.reveal-quote.reveal-delay-3.in-view { animation-delay: 0.3s; }
+.reveal-pop.reveal-delay-4.in-view,
+.reveal-quote.reveal-delay-4.in-view { animation-delay: 0.4s; }
+.reveal-pop.reveal-delay-5.in-view,
+.reveal-quote.reveal-delay-5.in-view { animation-delay: 0.5s; }
+
+/* ── Gift / Perks surprise reveal ── */
+
+/* Card entrance: dramatic scale from tiny + rotate */
+@keyframes gift-card-reveal {
+  0%   { opacity: 0; transform: scale(0.3) rotate(-3deg); }
+  50%  { opacity: 1; transform: scale(1.04) rotate(0.5deg); }
+  70%  { transform: scale(0.97) rotate(-0.3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.reveal-gift-card {
+  opacity: 0;
+}
+.reveal-gift-card.in-view {
+  animation: gift-card-reveal 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Emoji: bounce drop + wobble */
+@keyframes gift-emoji-drop {
+  0%   { opacity: 0; transform: scale(0) translateY(-80px) rotate(-20deg); }
+  35%  { opacity: 1; transform: scale(1.4) translateY(10px) rotate(8deg); }
+  55%  { transform: scale(0.85) translateY(-5px) rotate(-5deg); }
+  70%  { transform: scale(1.15) translateY(3px) rotate(3deg); }
+  85%  { transform: scale(0.95) translateY(-1px) rotate(-1deg); }
+  100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+}
+.gift-emoji {
+  opacity: 0;
+  display: inline-block;
+}
+.reveal-gift-card.in-view .gift-emoji {
+  animation: gift-emoji-drop 1s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+}
+
+/* Sparkle particles around the emoji */
+.gift-sparkle-wrap {
+  position: relative;
+  display: inline-block;
+}
+.gift-sparkle-wrap::before,
+.gift-sparkle-wrap::after {
+  content: '✦';
+  position: absolute;
+  font-size: 0.4em;
+  opacity: 0;
+  pointer-events: none;
+}
+.gift-sparkle-wrap::before {
+  top: -0.2em;
+  right: -0.5em;
+  color: #F5C842;
+}
+.gift-sparkle-wrap::after {
+  bottom: 0;
+  left: -0.5em;
+  color: #2DD4A8;
+}
+
+@keyframes sparkle-burst-1 {
+  0%   { opacity: 0; transform: scale(0) translate(0, 0); }
+  40%  { opacity: 1; transform: scale(1.3) translate(12px, -18px); }
+  100% { opacity: 0; transform: scale(0.5) translate(20px, -30px); }
+}
+@keyframes sparkle-burst-2 {
+  0%   { opacity: 0; transform: scale(0) translate(0, 0); }
+  40%  { opacity: 1; transform: scale(1.1) translate(-14px, 12px); }
+  100% { opacity: 0; transform: scale(0.4) translate(-22px, 24px); }
+}
+.reveal-gift-card.in-view .gift-sparkle-wrap::before {
+  animation: sparkle-burst-1 0.8s ease-out 0.65s forwards;
+}
+.reveal-gift-card.in-view .gift-sparkle-wrap::after {
+  animation: sparkle-burst-2 0.8s ease-out 0.75s forwards;
+}
+
+/* Shimmer sweep across the card */
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+.gift-shimmer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.gift-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.12) 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  opacity: 0;
+}
+.reveal-gift-card.in-view .gift-shimmer::after {
+  opacity: 1;
+  animation: shimmer-sweep 1.2s ease-in-out 0.8s forwards;
+}
+
+/* Glow ring behind emoji */
+@keyframes glow-ring {
+  0%   { opacity: 0; transform: scale(0.3); }
+  50%  { opacity: 0.6; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(1.8); }
+}
+.gift-glow {
+  position: absolute;
+  width: 4em;
+  height: 4em;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 200, 66, 0.4) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  margin-top: -2em;
+  margin-left: -2em;
+  opacity: 0;
+  pointer-events: none;
+}
+.reveal-gift-card.in-view .gift-glow {
+  animation: glow-ring 1.2s ease-out 0.35s forwards;
 }

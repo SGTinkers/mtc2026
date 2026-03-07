@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:18
+    container_name: postgres-db-mtc
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: mike-chang
+      POSTGRES_PASSWORD: mike-chang
+    volumes:
+      - postgres_data_mtc:/var/lib/postgresql
+    networks:
+      - app_network
+
+networks:
+  app_network:
+
+volumes:
+  postgres_data_mtc:

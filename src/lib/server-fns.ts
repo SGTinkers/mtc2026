@@ -1517,3 +1517,177 @@ export const createBillingPortalSession = createServerFn({
 
   return { url: portalSession.url };
 });
+
+// ─── Export Members ───
+
+export const exportMembersCsv = createServerFn({ method: "POST" })
+  .inputValidator((data: { status?: string; planId?: string }) => data)
+  .handler(async ({ data }) => {
+    await requireAdminSession();
+    const { getMembersForExport } = await import("./members.repo.js");
+    const { generateCsv } = await import("./csv.js");
+    
+    const membersData = await getMembersForExport(data);
+    
+    const csvRows = membersData.map(m => {
+      // Format dependants as "Name:Relationship | Name2:Relationship2"
+      const depsString = m.dependants
+        .map(d => `${d.name}:${d.relationship}`)
+        .join(" | ");
+
+      // Format dates safely
+      const formatDate = (dateStr: string | null | Date) => {
+        if (!dateStr) return "";
+        try {
+          return new Date(dateStr).toISOString().split('T')[0];
+        } catch {
+          return String(dateStr);
+        }
+      };
+
+      return {
+        Name: m.userName || "",
+        Email: m.userEmail || "",
+        Phone: m.userPhone || "",
+        NRIC: m.nric || "",
+        DOB: m.dob ? formatDate(m.dob) : "",
+        Address: m.address || "",
+        PostalCode: m.postalCode || "",
+        Plan: m.planName || "",
+        MonthlyAmount: m.monthlyAmount || "",
+        Status: m.subStatus || "",
+        Dependants: depsString,
+      };
+    });
+
+    return generateCsv(csvRows);
+  });
+
+// ─── Import Members ───
+export const importMembersCsv = createServerFn({ method: "POST" })
+  .inputValidator((data: { rows: Record<string, string>[] }) => data)
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+    const { rows } = data;
+    
+    const allPlans = await db.select().from(plans);
+    let importedCount = 0;
+    const errors: string[] = [];
+
+    for (const [index, row] of rows.entries()) {
+      try {
+        const { Name, Email, Phone, NRIC, DOB, Address, PostalCode, Plan, MonthlyAmount, Dependants } = row;
+        
+        if (!Email || !Name) {
+          errors.push(`Row ${index + 1}: Missing Email or Name`);
+          continue;
+        }
+
+        // Check if user exists
+        let existingUser = await db.select().from(user).where(eq(user.email, Email)).then(res => res[0]);
+        let userId = existingUser?.id;
+
+        if (!existingUser) {
+          const newUser = await auth.api.signUpEmail({
+            body: {
+              name: Name,
+              email: Email,
+              password: crypto.randomUUID(), // Random password
+            },
+          });
+          if (!newUser?.user) throw new Error("Failed to create user");
+          userId = newUser.user.id;
+          
+          if (Phone) {
+            await db.update(user).set({ phoneNumber: Phone }).where(eq(user.id, userId));
+          }
+        }
+
+        // Check if member exists
+        let memberRow = await db.select().from(members).where(eq(members.userId, userId!)).then(res => res[0]);
+        let memberId = memberRow?.id;
+
+        if (!memberRow) {
+          const [newMember] = await db.insert(members).values({
+            userId: userId!,
+            nric: NRIC || null,
+            dob: DOB || null,
+            address: Address || null,
+            postalCode: PostalCode || null,
+            createdBy: session.user.id,
+          }).returning();
+          memberId = newMember!.id;
+        }
+
+        if (!memberId) continue;
+
+        // Plan matching
+        const normalizedPlanName = (Plan || "").toLowerCase().replace(/[^a-z]/g, "");
+        let matchedPlan = allPlans.find(p => p.slug.replace(/[^a-z]/g, "") === normalizedPlanName);
+        
+        if (!matchedPlan && allPlans.length > 0) {
+          // fallback to first plan if not matched or empty
+          matchedPlan = allPlans[allPlans.length - 1]; 
+        }
+
+        if (matchedPlan) {
+          const amount = MonthlyAmount ? Number(MonthlyAmount) : Number(matchedPlan.minAmount);
+          
+          const today = new Date().toISOString().split("T")[0]!;
+          const nextMonth = new Date();
+          nextMonth.setMonth(nextMonth.getMonth() + 1);
+          const coverageUntil = nextMonth.toISOString().split("T")[0]!;
+
+          const [subscription] = await db.insert(subscriptions).values({
+            memberId: memberId,
+            planId: matchedPlan.id,
+            monthlyAmount: String(amount),
+            status: "active",
+            paymentMethod: "manual",
+            coverageStart: today,
+            coverageUntil,
+          }).returning();
+
+          // Handle Dependants (Format: "Name:Relationship | Name2:Relationship2")
+          if (Dependants && subscription) {
+            const depsList = Dependants.split("|").map(d => d.trim()).filter(Boolean);
+            for (const dep of depsList) {
+              const [depName, depRel] = dep.split(":").map(s => s.trim());
+              if (depName) {
+                let relationship: "spouse" | "child" | "parent" | "in_law" | "sibling" = "child";
+                const normalizedRel = (depRel || "").toLowerCase();
+                if (["spouse", "child", "parent", "sibling"].includes(normalizedRel)) {
+                  relationship = normalizedRel as any;
+                } else if (normalizedRel === "in-law" || normalizedRel === "in_law" || normalizedRel === "in law") {
+                  relationship = "in_law";
+                }
+
+                await db.insert(dependants).values({
+                  subscriptionId: subscription.id,
+                  name: depName,
+                  relationship,
+                  sameAddress: true,
+                });
+              }
+            }
+          }
+        }
+        
+        importedCount++;
+      } catch (e: any) {
+        errors.push(`Row ${index + 1}: ${e.message}`);
+      }
+    }
+
+    if (importedCount > 0) {
+      await db.insert(auditLog).values({
+        entityType: "system",
+        entityId: crypto.randomUUID(),
+        action: "csv_import",
+        newValue: { importedCount, errors: errors.length },
+        performedBy: session.user.id,
+      });
+    }
+
+    return { success: true, importedCount, errors };
+  });

@@ -31,6 +31,19 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  notFoundComponent: () => (
+    <RootDocument>
+      <div className="flex min-h-screen items-center justify-center p-4 text-center">
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold">404</h1>
+          <p className="text-muted-foreground">The page you are looking for could not be found.</p>
+          <a href="/" className="inline-block rounded-md bg-primary px-4 py-2 text-primary-foreground">
+            Return Home
+          </a>
+        </div>
+      </div>
+    </RootDocument>
+  ),
   component: RootComponent,
 });
 

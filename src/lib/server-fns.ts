@@ -74,6 +74,17 @@ export const getMembers = createServerFn({ method: "GET" }).handler(
   async () => {
     await requireAdminSession();
 
+    const latestSub = db
+      .selectDistinctOn([subscriptions.memberId], {
+        memberId: subscriptions.memberId,
+        status: subscriptions.status,
+        monthlyAmount: subscriptions.monthlyAmount,
+        planId: subscriptions.planId,
+      })
+      .from(subscriptions)
+      .orderBy(subscriptions.memberId, desc(subscriptions.createdAt))
+      .as("latest_sub");
+
     const result = await db
       .select({
         id: members.id,
@@ -84,14 +95,14 @@ export const getMembers = createServerFn({ method: "GET" }).handler(
         userName: user.name,
         userEmail: user.email,
         userPhone: user.phoneNumber,
-        subStatus: subscriptions.status,
+        subStatus: latestSub.status,
         planName: plans.name,
-        monthlyAmount: subscriptions.monthlyAmount,
+        monthlyAmount: latestSub.monthlyAmount,
       })
       .from(members)
       .leftJoin(user, eq(members.userId, user.id))
-      .leftJoin(subscriptions, eq(subscriptions.memberId, members.id))
-      .leftJoin(plans, eq(subscriptions.planId, plans.id))
+      .leftJoin(latestSub, eq(latestSub.memberId, members.id))
+      .leftJoin(plans, eq(latestSub.planId, plans.id))
       .orderBy(desc(members.createdAt));
 
     return result;
@@ -426,6 +437,39 @@ export const getMemberDashboard = createServerFn({ method: "GET" }).handler(
     return { member: memberRow, subscription: sub ?? null };
   },
 );
+
+export const getMemberSubscriptions = createServerFn({
+  method: "GET",
+}).handler(async () => {
+  const session = await getSession();
+
+  const [member] = await db
+    .select({ id: members.id })
+    .from(members)
+    .where(eq(members.userId, session.user.id));
+
+  if (!member) return [];
+
+  return db
+    .select({
+      id: subscriptions.id,
+      status: subscriptions.status,
+      monthlyAmount: subscriptions.monthlyAmount,
+      paymentMethod: subscriptions.paymentMethod,
+      coverageStart: subscriptions.coverageStart,
+      coverageUntil: subscriptions.coverageUntil,
+      graceUntil: subscriptions.graceUntil,
+      createdAt: subscriptions.createdAt,
+      planName: plans.name,
+      planSlug: plans.slug,
+      courseDiscount: plans.courseDiscount,
+      maxDependants: plans.maxDependants,
+    })
+    .from(subscriptions)
+    .innerJoin(plans, eq(subscriptions.planId, plans.id))
+    .where(eq(subscriptions.memberId, member.id))
+    .orderBy(desc(subscriptions.createdAt));
+});
 
 export const getMemberPayments = createServerFn({ method: "GET" }).handler(
   async () => {

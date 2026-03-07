@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getMemberDashboard } from "~/lib/server-fns.js";
+import { getMemberSubscriptions } from "~/lib/server-fns.js";
 import { Badge } from "~/components/ui/badge.js";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card.js";
 
 export const Route = createFileRoute("/member/subscription")({
-  loader: () => getMemberDashboard(),
+  loader: () => getMemberSubscriptions(),
   component: SubscriptionPage,
 });
 
@@ -17,9 +17,9 @@ const statusVariant = {
 } as const;
 
 function SubscriptionPage() {
-  const data = Route.useLoaderData();
+  const allSubscriptions = Route.useLoaderData();
 
-  if (!data?.subscription) {
+  if (!allSubscriptions?.length) {
     return (
       <div>
         <h2 className="mb-6 text-2xl font-bold">Subscription</h2>
@@ -32,7 +32,8 @@ function SubscriptionPage() {
     );
   }
 
-  const { subscription } = data;
+  const subscription = allSubscriptions[0]!;
+  const pastSubscriptions = allSubscriptions.slice(1);
 
   return (
     <div>
@@ -94,6 +95,44 @@ function SubscriptionPage() {
           </dl>
         </CardContent>
       </Card>
+
+      {pastSubscriptions.length > 0 && (
+        <div className="mt-8">
+          <h3 className="mb-4 text-lg font-semibold">Past Subscriptions</h3>
+          <Card>
+            <CardContent className="p-0">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">Plan</th>
+                    <th className="px-4 py-3 font-medium">Amount</th>
+                    <th className="px-4 py-3 font-medium">Coverage</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pastSubscriptions.map((sub) => (
+                    <tr key={sub.id} className="border-b last:border-0">
+                      <td className="px-4 py-3">{sub.planName}</td>
+                      <td className="px-4 py-3">
+                        ${Number(sub.monthlyAmount).toFixed(2)}/mo
+                      </td>
+                      <td className="px-4 py-3">
+                        {sub.coverageStart} — {sub.coverageUntil}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={statusVariant[sub.status]}>
+                          {sub.status.replace("_", " ")}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

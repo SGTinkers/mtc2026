@@ -66,7 +66,7 @@ function DependantsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold">Dependants</h2>
-        {canAdd && !showForm && (
+        {canAdd && !showForm && deps.length > 0 && (
           <Button onClick={() => setShowForm(true)}>
             <Plus className="h-4 w-4" />
             Add Dependant

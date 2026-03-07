@@ -2,7 +2,6 @@ import {
   HeadContent,
   Outlet,
   Scripts,
-  ScrollRestoration,
   createRootRoute,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -38,7 +37,6 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
         {children}
-        <ScrollRestoration />
         <Scripts />
       </body>
     </html>

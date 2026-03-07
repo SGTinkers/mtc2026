@@ -1,10 +1,13 @@
-import { createFileRoute, Outlet, Link, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, redirect, useRouter, useMatch } from "@tanstack/react-router";
 import { LayoutDashboard, Users, CreditCard, LogOut } from "lucide-react";
 import { getServerSession } from "~/lib/server-auth.js";
 import { authClient } from "~/lib/auth-client.js";
 
 export const Route = createFileRoute("/admin")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
+    if (location.pathname === "/admin/login") {
+      return { session: null };
+    }
     const session = await getServerSession();
     if (!session || session.user.role !== "admin") {
       throw redirect({ to: "/admin/login" });
@@ -22,6 +25,12 @@ const navItems = [
 
 function AdminLayout() {
   const router = useRouter();
+  const { session } = Route.useRouteContext();
+
+  // Login page renders without the sidebar layout
+  if (!session) {
+    return <Outlet />;
+  }
 
   return (
     <div className="flex min-h-screen">

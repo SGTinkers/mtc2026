@@ -10,7 +10,10 @@ import { getServerSession } from "~/lib/server-auth.js";
 import { authClient } from "~/lib/auth-client.js";
 
 export const Route = createFileRoute("/member")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
+    if (location.pathname === "/member/login") {
+      return { session: null };
+    }
     const session = await getServerSession();
     if (!session) {
       throw redirect({ to: "/member/login" });
@@ -30,6 +33,11 @@ const navItems = [
 
 function MemberLayout() {
   const router = useRouter();
+  const { session } = Route.useRouteContext();
+
+  if (!session) {
+    return <Outlet />;
+  }
 
   return (
     <div className="flex min-h-screen">

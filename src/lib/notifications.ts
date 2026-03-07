@@ -8,6 +8,8 @@ import GracePeriodEmail from "~/emails/grace-period.js";
 import CoverageLapsedEmail from "~/emails/coverage-lapsed.js";
 import CoverageReactivatedEmail from "~/emails/coverage-reactivated.js";
 import GiroApprovedEmail from "~/emails/giro-approved.js";
+import WelcomePaymentEmail from "~/emails/welcome-payment.js";
+import WelcomeBackPaymentEmail from "~/emails/welcome-back-payment.js";
 import { createElement } from "react";
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -105,5 +107,45 @@ export async function sendGiroApprovedEmail(email: string, name: string) {
     to: email,
     subject: "GIRO Approved - Skim Pintar",
     react: createElement(GiroApprovedEmail, { name }),
+  });
+}
+
+export async function sendWelcomePaymentEmail(
+  email: string,
+  name: string,
+  amount: string,
+  planName: string,
+  coverageEndDate: string,
+  loginUrl: string,
+) {
+  await send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: "Welcome to Skim Pintar — Your Payment is Confirmed",
+    react: createElement(WelcomePaymentEmail, {
+      name,
+      amount,
+      planName,
+      coverageEndDate,
+      loginUrl,
+    }),
+  });
+}
+
+export async function sendWelcomeBackPaymentEmail(
+  email: string,
+  amount: string,
+  planName: string,
+  coverageEndDate: string,
+) {
+  await send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: "Welcome Back — Your Payment is Confirmed",
+    react: createElement(WelcomeBackPaymentEmail, {
+      amount,
+      planName,
+      coverageEndDate,
+    }),
   });
 }

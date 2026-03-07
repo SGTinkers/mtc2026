@@ -14,8 +14,8 @@ import { eq, and, ne } from "drizzle-orm";
 import {
   sendPaymentReceivedEmail,
   sendPaymentFailedEmail,
-  sendWelcomeEmail,
-  sendCoverageReactivatedEmail,
+  sendWelcomePaymentEmail,
+  sendWelcomeBackPaymentEmail,
 } from "~/lib/notifications.js";
 import { auth } from "~/lib/auth.js";
 import type Stripe from "stripe";
@@ -166,30 +166,40 @@ async function handleWebhook(request: Request): Promise<Response> {
 
           console.log("[Webhook] Subscription created");
 
-          // Send appropriate email
-          if (isExistingMember) {
-            try {
-              await sendCoverageReactivatedEmail(email);
-              console.log("[Webhook] Coverage reactivated email sent");
-            } catch (e) {
-              console.error("[Webhook] Failed to send reactivated email", e);
+          // Send consolidated email (welcome+payment or welcome-back+payment)
+          try {
+            const [plan] = await db
+              .select({ name: plans.name })
+              .from(plans)
+              .where(eq(plans.id, planId));
+            const planName = plan?.name ?? "Skim Pintar";
+            const coverageEndDate = nextMonth.toLocaleDateString("en-MY", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            });
+
+            if (isExistingMember) {
+              await sendWelcomeBackPaymentEmail(
+                email,
+                monthlyAmount,
+                planName,
+                coverageEndDate,
+              );
+              console.log("[Webhook] Welcome-back payment email sent");
+            } else {
+              await sendWelcomePaymentEmail(
+                email,
+                name,
+                monthlyAmount,
+                planName,
+                coverageEndDate,
+                `${env.BETTER_AUTH_URL}/member/login`,
+              );
+              console.log("[Webhook] Welcome payment email sent");
             }
-          } else {
-            try {
-              await sendWelcomeEmail(email, name);
-              console.log("[Webhook] Welcome email sent");
-            } catch (e) {
-              console.error("[Webhook] Failed to send welcome email", e);
-            }
-            try {
-              await auth.api.signInMagicLink({
-                body: { email },
-                headers: new Headers(),
-              });
-              console.log("[Webhook] Magic link sent");
-            } catch (e) {
-              console.error("[Webhook] Failed to send magic link", e);
-            }
+          } catch (e) {
+            console.error("[Webhook] Failed to send consolidated email", e);
           }
 
           // Audit log
@@ -234,6 +244,13 @@ async function handleWebhook(request: Request): Promise<Response> {
         typeof parentSub === "string"
           ? parentSub
           : parentSub?.id ?? null;
+
+      // Skip initial subscription invoice entirely — checkout.session.completed
+      // already created the payment record and set coverage
+      if (invoice.billing_reason === "subscription_create") {
+        console.log("[Webhook] Skipping initial subscription invoice (handled by checkout.session.completed)");
+        break;
+      }
 
       if (stripeSubId) {
         const [sub] = await db

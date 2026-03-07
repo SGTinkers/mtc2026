@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   createBillingPortalSession,
   getMemberDashboard,
@@ -7,7 +7,7 @@ import {
   getMemberPayments,
   updateSubscriptionAmount,
 } from "~/lib/server-fns.js";
-import { CreditCard, ExternalLink, Receipt, AlertTriangle } from "lucide-react";
+import { CreditCard, ExternalLink, Receipt, AlertTriangle, ArrowRight } from "lucide-react";
 import { SubscriptionStatusBadge } from "~/components/subscription-status-badge.js";
 import { Button } from "~/components/ui/button.js";
 
@@ -164,7 +164,7 @@ function ActiveSubscriptionCard({
 
   return (
     <div className="rounded-xl border border-g1/20 bg-g1/5 p-4">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-g1/20">
           <CreditCard className="h-5 w-5 text-g1" />
         </div>
@@ -175,30 +175,42 @@ function ActiveSubscriptionCard({
             </span>
             <SubscriptionStatusBadge status={subscription!.status as "active"} />
           </div>
-          <div className="mt-0.5 flex items-center gap-2">
-            <span className="text-xs text-txt2">
-              ${currentAmount.toFixed(2)}/month
-            </span>
-            {!showChangeForm && (
-              <button
-                onClick={() => setShowChangeForm(true)}
-                className="text-xs font-medium text-g1 underline hover:text-g2"
-              >
-                Change
-              </button>
-            )}
-          </div>
+          <p className="mt-0.5 text-xs text-txt2">
+            ${currentAmount.toFixed(2)}/month
+          </p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleManageSubscription}
-          disabled={loading}
-        >
-          {loading ? "Redirecting…" : "Manage"}
-          {!loading && <ExternalLink className="ml-1.5 h-3.5 w-3.5" />}
-        </Button>
       </div>
+      {subscription!.status === "active" ? (
+        <div className="mt-3 flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            onClick={() => setShowChangeForm(!showChangeForm)}
+          >
+            {showChangeForm ? "Cancel" : "Change Amount"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            onClick={handleManageSubscription}
+            disabled={loading}
+          >
+            {loading ? "Redirecting…" : "Manage Card"}
+            {!loading && <ExternalLink className="ml-1.5 h-3.5 w-3.5" />}
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-3">
+          <Link to="/donate">
+            <Button size="sm" className="w-full">
+              Start a New Subscription
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {showChangeForm && (
         <div className="mt-4 border-t border-g1/10 pt-4">

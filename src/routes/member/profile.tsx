@@ -1,10 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { getMemberDashboard, updateMemberProfile } from "~/lib/server-fns.js";
-import { Button } from "~/components/ui/button.js";
-import { Input } from "~/components/ui/input.js";
-import { Label } from "~/components/ui/label.js";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card.js";
+import { UserCircle, Check } from "lucide-react";
 
 export const Route = createFileRoute("/member/profile")({
   loader: () => getMemberDashboard(),
@@ -19,13 +16,9 @@ function ProfilePage() {
 
   if (!data) {
     return (
-      <div>
-        <h2 className="mb-6 text-2xl font-bold">Profile</h2>
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            Profile not found. Contact the mosque for assistance.
-          </CardContent>
-        </Card>
+      <div className="flex flex-col items-center py-16 text-center">
+        <UserCircle className="h-12 w-12 text-txt3" />
+        <p className="mt-4 text-sm text-txt2">Profile not found.</p>
       </div>
     );
   }
@@ -41,7 +34,10 @@ function ProfilePage() {
       data: {
         name: form.get("name") as string,
         phone: form.get("phone") as string,
+        nric: form.get("nric") as string,
+        dob: form.get("dob") as string,
         address: form.get("address") as string,
+        postalCode: form.get("postalCode") as string,
       },
     });
 
@@ -51,54 +47,99 @@ function ProfilePage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h2 className="mb-6 text-2xl font-bold">Profile</h2>
+    <div className="flex flex-col gap-5">
+      <h2 className="font-[family-name:var(--font-family-heading)] text-xl font-bold text-gd lg:text-2xl">
+        My Profile
+      </h2>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {success && (
-              <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">
-                Profile updated successfully.
-              </div>
-            )}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {success && (
+          <div className="flex items-center gap-2 rounded-xl bg-g1/10 px-4 py-3 text-sm font-medium text-g1">
+            <Check className="h-4 w-4" />
+            Profile updated successfully.
+          </div>
+        )}
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                defaultValue={data.member.name ?? ""}
-              />
-            </div>
+        <ProfileField
+          label="Full Name"
+          name="name"
+          defaultValue={data.member.name ?? ""}
+        />
+        <ProfileField
+          label="NRIC"
+          name="nric"
+          defaultValue={data.member.nric ?? ""}
+          placeholder="e.g. S1234567A"
+        />
+        <ProfileField
+          label="Date of Birth"
+          name="dob"
+          type="date"
+          defaultValue={data.member.dob ?? ""}
+        />
+        <ProfileField
+          label="Phone Number"
+          name="phone"
+          type="tel"
+          defaultValue={data.member.phone ?? ""}
+        />
+        <ProfileField
+          label="Address"
+          name="address"
+          defaultValue={data.member.address ?? ""}
+        />
+        <ProfileField
+          label="Postal Code"
+          name="postalCode"
+          defaultValue={data.member.postalCode ?? ""}
+          inputMode="numeric"
+        />
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                defaultValue={data.member.phone ?? ""}
-              />
-            </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-2 w-full rounded-xl bg-gold py-3.5 text-sm font-bold text-gdeep transition-all hover:brightness-110 disabled:opacity-50 sm:w-auto sm:px-8"
+        >
+          {loading ? "Saving..." : "Save Changes"}
+        </button>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                name="address"
-                defaultValue={data.member.address ?? ""}
-              />
-            </div>
+        <p className="text-xs text-txt3">
+          Email: {data.member.email}
+        </p>
+      </form>
+    </div>
+  );
+}
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save Changes"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+function ProfileField({
+  label,
+  name,
+  defaultValue,
+  type = "text",
+  placeholder,
+  inputMode,
+}: {
+  label: string;
+  name: string;
+  defaultValue: string;
+  type?: string;
+  placeholder?: string;
+  inputMode?: "numeric" | "tel" | "text";
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={name} className="text-xs font-semibold text-gd/70">
+        {label}
+      </label>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        inputMode={inputMode}
+        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gd placeholder-txt3 outline-none transition-all focus:border-g1 focus:ring-2 focus:ring-g1/10"
+      />
     </div>
   );
 }

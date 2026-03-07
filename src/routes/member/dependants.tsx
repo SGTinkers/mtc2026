@@ -1,31 +1,31 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { getMemberDependants, addDependant, removeDependant } from "~/lib/server-fns.js";
-import { Button } from "~/components/ui/button.js";
-import { Input } from "~/components/ui/input.js";
-import { Label } from "~/components/ui/label.js";
-import { Select } from "~/components/ui/select.js";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card.js";
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "~/components/ui/table.js";
-import { Plus, Trash2, Users } from "lucide-react";
+  getMemberDependants,
+  addDependant,
+  removeDependant,
+} from "~/lib/server-fns.js";
+import { Plus, X, Users, Heart, UserPlus, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/member/dependants")({
   loader: () => getMemberDependants(),
   component: DependantsPage,
 });
 
+const relationshipLabels: Record<string, string> = {
+  spouse: "Spouse",
+  child: "Child",
+  parent: "Parent",
+  in_law: "Parent-in-law",
+  sibling: "Sibling",
+};
+
 function DependantsPage() {
   const { dependants: deps, canAdd, subscriptionId } = Route.useLoaderData();
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -41,180 +41,219 @@ function DependantsPage() {
         data: {
           subscriptionId,
           name: form.get("name") as string,
-          nric: form.get("nric") as string,
-          phone: (form.get("phone") as string) || undefined,
-          relationship: form.get("relationship") as "spouse" | "child" | "parent" | "in_law" | "sibling",
-          sameAddress: form.get("sameAddress") === "on",
+          dob: (form.get("dob") as string) || undefined,
+          relationship: form.get("relationship") as
+            | "spouse"
+            | "child"
+            | "parent"
+            | "in_law"
+            | "sibling",
         },
       });
       setShowForm(false);
       router.invalidate();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add dependant");
+      setError(
+        err instanceof Error ? err.message : "Failed to add dependant",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemove = async (id: string) => {
-    if (!confirm("Remove this dependant?")) return;
+    setRemoving(id);
     await removeDependant({ data: id });
     router.invalidate();
+    setRemoving(null);
   };
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Dependants</h2>
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <h2 className="font-[family-name:var(--font-family-heading)] text-xl font-bold text-gd lg:text-2xl">
+          Family Members
+        </h2>
         {canAdd && !showForm && deps.length > 0 && (
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4" />
-            Add Dependant
-          </Button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-g1 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-g2"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add
+          </button>
         )}
       </div>
 
+      {/* No subscription */}
       {!subscriptionId && (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            No active skim. Contact the mosque to get started.
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<Shield className="h-8 w-8 text-txt3" />}
+          title="No active subscription"
+          desc="Contact the mosque to get started."
+        />
       )}
 
+      {/* Plan doesn't support dependants */}
       {subscriptionId && !canAdd && deps.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12 text-center text-muted-foreground">
-            <Users className="mb-4 h-12 w-12" />
-            <p>Dependants are available on Skim Pintar Plus.</p>
-            <p className="mt-1 text-sm">
-              Upgrade your tier to add dependants.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<Users className="h-8 w-8 text-txt3" />}
+          title="Family coverage not included"
+          desc="Upgrade to Skim Pintar Plus ($20/mo) to add family members to your coverage."
+        />
       )}
 
+      {/* Can add but no deps yet */}
       {subscriptionId && canAdd && deps.length === 0 && !showForm && (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12 text-center text-muted-foreground">
-            <Users className="mb-4 h-12 w-12" />
-            <p>No dependants added yet.</p>
-            <p className="mt-1 text-sm">
-              Add family members to extend your skim benefits to them.
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white/50 py-10 transition-all hover:border-g1/40"
+        >
+          <UserPlus className="h-8 w-8 text-txt3" />
+          <div className="text-center">
+            <p className="text-sm font-semibold text-gd">
+              Add your first family member
             </p>
-            <Button className="mt-4" onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4" />
-              Add Dependant
-            </Button>
-          </CardContent>
-        </Card>
+            <p className="mt-0.5 text-xs text-txt2">
+              Extend your coverage to loved ones
+            </p>
+          </div>
+        </button>
       )}
 
+      {/* Add form */}
       {showForm && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Add Dependant</CardTitle>
-            <CardDescription>Add a family member to your skim</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAdd} className="space-y-4">
-              {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  {error}
-                </div>
-              )}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input id="name" name="name" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nric">NRIC *</Label>
-                  <Input id="nric" name="nric" required />
-                </div>
+        <div className="rounded-xl border border-g1/20 bg-white p-5">
+          <form onSubmit={handleAdd} className="flex flex-col gap-4">
+            {error && (
+              <div className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">
+                {error}
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" name="phone" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="relationship">Relationship *</Label>
-                  <Select id="relationship" name="relationship" required>
-                    <option value="">Select</option>
-                    <option value="spouse">Spouse</option>
-                    <option value="child">Child</option>
-                    <option value="parent">Parent</option>
-                    <option value="in_law">In-law</option>
-                    <option value="sibling">Sibling</option>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="sameAddress"
-                  name="sameAddress"
-                  defaultChecked
-                  className="h-4 w-4 rounded border-border"
-                />
-                <Label htmlFor="sameAddress">Same address as subscriber</Label>
-              </div>
-              <div className="flex gap-3">
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Adding..." : "Add"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gd/70">
+                Full Name <span className="text-red-400">*</span>
+              </label>
+              <input
+                name="name"
+                required
+                placeholder="e.g. Siti binte Ahmad"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gd placeholder-txt3 outline-none transition-all focus:border-g1 focus:ring-2 focus:ring-g1/10"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gd/70">
+                Date of Birth
+              </label>
+              <input
+                name="dob"
+                type="date"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gd outline-none transition-all focus:border-g1 focus:ring-2 focus:ring-g1/10"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gd/70">
+                Relationship <span className="text-red-400">*</span>
+              </label>
+              <select
+                name="relationship"
+                required
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gd outline-none transition-all focus:border-g1 focus:ring-2 focus:ring-g1/10"
+              >
+                <option value="">Select relationship</option>
+                <option value="spouse">Spouse</option>
+                <option value="child">Child</option>
+                <option value="parent">Parent</option>
+                <option value="in_law">Parent-in-law</option>
+                <option value="sibling">Sibling</option>
+              </select>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 rounded-xl bg-g1 py-3 text-sm font-bold text-white transition-all hover:bg-g2 disabled:opacity-50"
+              >
+                {loading ? "Adding..." : "Add Member"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setError("");
+                }}
+                className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-txt2 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
+      {/* List of dependants */}
       {deps.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>NRIC</TableHead>
-                  <TableHead>Relationship</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deps.map((d) => (
-                  <TableRow key={d.id}>
-                    <TableCell className="font-medium">{d.name}</TableCell>
-                    <TableCell>{d.nric}</TableCell>
-                    <TableCell className="capitalize">
-                      {d.relationship.replace("_", " ")}
-                    </TableCell>
-                    <TableCell>{d.phone || "—"}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemove(d.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-3">
+          {deps.map((d) => (
+            <div
+              key={d.id}
+              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-g1/10">
+                <Heart className="h-5 w-5 text-g1" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gd">{d.name}</p>
+                <p className="text-xs text-txt3">
+                  {relationshipLabels[d.relationship] || d.relationship}
+                  {d.dob && (
+                    <>
+                      {" "}
+                      &middot; Born{" "}
+                      {new Date(d.dob).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={() => handleRemove(d.id)}
+                disabled={removing === d.id}
+                className="rounded-lg p-2 text-txt3 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
       )}
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white py-12 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+        {icon}
+      </div>
+      <p className="mt-4 text-sm font-semibold text-gd">{title}</p>
+      <p className="mt-1 max-w-xs text-xs leading-relaxed text-txt2">{desc}</p>
     </div>
   );
 }

@@ -29,6 +29,25 @@ function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
+  // Scroll-reveal: re-run on every mount so back-navigation works
+  useEffect(() => {
+    const selector = '.reveal,.reveal-scale,.reveal-left,.reveal-right,.reveal-quote,.reveal-pop,.reveal-gift-card';
+    const els = document.querySelectorAll(selector);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in-view');
+            observer.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -30px 0px' },
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-cream font-[family-name:var(--font-family-body)]">
       {/* Hero Section */}
@@ -330,11 +349,7 @@ function LandingPage() {
             {/* Gift emoji with glow + sparkles */}
             <span className="gift-sparkle-wrap">
               <span className="gift-glow" />
-              <span className="gift-emoji">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-[64px] w-[64px] lg:h-[88px] lg:w-[88px] 2xl:h-[100px] 2xl:w-[100px] text-gold">
-                  <rect x="3" y="8" width="18" height="4" rx="1" /><rect x="3" y="12" width="18" height="8" rx="1" /><path d="M12 8v12" /><path d="M19 12v8" /><path d="M5 12v8" /><path d="M12 8c-2-4-6-4-6-1s4 1 6 1" /><path d="M12 8c2-4 6-4 6-1s-4 1-6 1" />
-                </svg>
-              </span>
+              <span className="gift-emoji text-[64px] lg:text-[88px] 2xl:text-[100px] leading-none">🎁</span>
             </span>
 
             <h2 className="max-w-sm lg:max-w-md 2xl:max-w-lg text-center font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl 2xl:text-4xl leading-[1.2] font-bold tracking-tight text-white">
@@ -485,28 +500,6 @@ function LandingPage() {
         </div>
       </footer>
 
-      {/* Inline scroll reveal — runs without React hydration */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-if(typeof window!=='undefined'){
-  function initReveal(){
-    var s='.reveal,.reveal-scale,.reveal-left,.reveal-right,.reveal-quote,.reveal-pop,.reveal-gift-card';
-    var els=document.querySelectorAll(s);
-    if(!els.length){requestAnimationFrame(initReveal);return}
-    var o=new IntersectionObserver(function(entries){
-      entries.forEach(function(e){
-        if(e.isIntersecting){e.target.classList.add('in-view');o.unobserve(e.target)}
-      });
-    },{threshold:0.15,rootMargin:'0px 0px -30px 0px'});
-    els.forEach(function(el){o.observe(el)});
-  }
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(initReveal,100)})}
-  else{setTimeout(initReveal,100)}
-}
-`,
-        }}
-      />
     </div>
   );
 }

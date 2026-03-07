@@ -106,7 +106,9 @@ export const members = pgTable("members", {
     .unique()
     .references(() => user.id, { onDelete: "cascade" }),
   nric: text("nric").unique(),
+  dob: date("dob"),
   address: text("address"),
+  postalCode: text("postal_code"),
   createdBy: text("created_by").references(() => user.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -150,7 +152,8 @@ export const dependants = pgTable("dependants", {
     .notNull()
     .references(() => subscriptions.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  nric: text("nric").notNull(),
+  nric: text("nric"),
+  dob: date("dob"),
   phone: text("phone"),
   relationship: relationshipEnum("relationship").notNull(),
   sameAddress: boolean("same_address").notNull().default(true),

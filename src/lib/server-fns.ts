@@ -420,7 +420,9 @@ export const getMemberDashboard = createServerFn({ method: "GET" }).handler(
         id: members.id,
         userId: members.userId,
         nric: members.nric,
+        dob: members.dob,
         address: members.address,
+        postalCode: members.postalCode,
         phone: user.phoneNumber,
         email: user.email,
         name: user.name,
@@ -451,7 +453,34 @@ export const getMemberDashboard = createServerFn({ method: "GET" }).handler(
       .orderBy(desc(subscriptions.createdAt))
       .limit(1);
 
-    return { member: memberRow, subscription: sub ?? null };
+    // Get total contributions across all subscriptions
+    const subIds = await db
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(eq(subscriptions.memberId, memberRow.id));
+
+    let totalContributions = "0";
+    let paymentCount = 0;
+    if (subIds.length > 0) {
+      const [result] = await db
+        .select({
+          total: sql<string>`coalesce(sum(${payments.amount}), 0)`,
+          count: count(),
+        })
+        .from(payments)
+        .where(
+          sql`${payments.subscriptionId} in ${sql.raw(`(${subIds.map((s) => `'${s.id}'`).join(",")})`)}`,
+        );
+      totalContributions = result?.total ?? "0";
+      paymentCount = result?.count ?? 0;
+    }
+
+    return {
+      member: memberRow,
+      subscription: sub ?? null,
+      totalContributions,
+      paymentCount,
+    };
   },
 );
 
@@ -572,10 +601,11 @@ export const addDependant = createServerFn({ method: "POST" })
     (data: {
       subscriptionId: string;
       name: string;
-      nric: string;
+      nric?: string;
+      dob?: string;
       phone?: string;
       relationship: "spouse" | "child" | "parent" | "in_law" | "sibling";
-      sameAddress: boolean;
+      sameAddress?: boolean;
     }) => data,
   )
   .handler(async ({ data }) => {
@@ -617,10 +647,11 @@ export const addDependant = createServerFn({ method: "POST" })
       .values({
         subscriptionId: data.subscriptionId,
         name: data.name,
-        nric: data.nric,
+        nric: data.nric || null,
+        dob: data.dob || null,
         phone: data.phone || null,
         relationship: data.relationship,
-        sameAddress: data.sameAddress,
+        sameAddress: data.sameAddress ?? true,
       })
       .returning();
 
@@ -640,7 +671,10 @@ export const updateMemberProfile = createServerFn({ method: "POST" })
     z.object({
       name: z.string().min(1).optional(),
       phone: z.string().optional(),
+      nric: z.string().optional(),
+      dob: z.string().optional(),
       address: z.string().optional(),
+      postalCode: z.string().optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -656,10 +690,21 @@ export const updateMemberProfile = createServerFn({ method: "POST" })
         .where(eq(user.id, session.user.id));
     }
 
-    if (data.address !== undefined) {
+    const hasMemberUpdate =
+      data.nric !== undefined ||
+      data.dob !== undefined ||
+      data.address !== undefined ||
+      data.postalCode !== undefined;
+
+    if (hasMemberUpdate) {
       await db
         .update(members)
-        .set({ address: data.address })
+        .set({
+          ...(data.nric !== undefined && { nric: data.nric }),
+          ...(data.dob !== undefined && { dob: data.dob }),
+          ...(data.address !== undefined && { address: data.address }),
+          ...(data.postalCode !== undefined && { postalCode: data.postalCode }),
+        })
         .where(eq(members.userId, session.user.id));
     }
 
@@ -779,8 +824,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       metadata: {
         subscription_id: sub.id,
       },
-      success_url: `${env.BETTER_AUTH_URL}/member/subscription?success=1`,
-      cancel_url: `${env.BETTER_AUTH_URL}/member/subscription`,
+      success_url: `${env.BETTER_AUTH_URL}/member?success=1`,
+      cancel_url: `${env.BETTER_AUTH_URL}/member`,
     });
 
     return { url: checkoutSession.url };
@@ -902,7 +947,7 @@ export const createBillingPortalSession = createServerFn({
 
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: sub.subscriptions.stripeCustomerId,
-    return_url: `${env.BETTER_AUTH_URL}/member/subscription`,
+    return_url: `${env.BETTER_AUTH_URL}/member`,
   });
 
   return { url: portalSession.url };

@@ -8,6 +8,13 @@
       "when": 1772871519746,
       "tag": "0000_sparkling_tattoo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772897985471,
+      "tag": "0001_flat_luminals",
+      "breakpoints": true
     }
   ]
 }

@@ -15,7 +15,6 @@ import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MemberIndexRouteImport } from './routes/member/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as MemberSubscriptionRouteImport } from './routes/member/subscription'
 import { Route as MemberProfileRouteImport } from './routes/member/profile'
 import { Route as MemberPaymentsRouteImport } from './routes/member/payments'
 import { Route as MemberLoginRouteImport } from './routes/member/login'
@@ -58,11 +57,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRouteRoute,
-} as any)
-const MemberSubscriptionRoute = MemberSubscriptionRouteImport.update({
-  id: '/subscription',
-  path: '/subscription',
-  getParentRoute: () => MemberRouteRoute,
 } as any)
 const MemberProfileRoute = MemberProfileRouteImport.update({
   id: '/profile',
@@ -135,7 +129,6 @@ export interface FileRoutesByFullPath {
   '/member/login': typeof MemberLoginRoute
   '/member/payments': typeof MemberPaymentsRoute
   '/member/profile': typeof MemberProfileRoute
-  '/member/subscription': typeof MemberSubscriptionRoute
   '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
@@ -154,7 +147,6 @@ export interface FileRoutesByTo {
   '/member/login': typeof MemberLoginRoute
   '/member/payments': typeof MemberPaymentsRoute
   '/member/profile': typeof MemberProfileRoute
-  '/member/subscription': typeof MemberSubscriptionRoute
   '/admin': typeof AdminIndexRoute
   '/member': typeof MemberIndexRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
@@ -176,7 +168,6 @@ export interface FileRoutesById {
   '/member/login': typeof MemberLoginRoute
   '/member/payments': typeof MemberPaymentsRoute
   '/member/profile': typeof MemberProfileRoute
-  '/member/subscription': typeof MemberSubscriptionRoute
   '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
   '/admin/members/$id': typeof AdminMembersIdRoute
@@ -199,7 +190,6 @@ export interface FileRouteTypes {
     | '/member/login'
     | '/member/payments'
     | '/member/profile'
-    | '/member/subscription'
     | '/admin/'
     | '/member/'
     | '/admin/members/$id'
@@ -218,7 +208,6 @@ export interface FileRouteTypes {
     | '/member/login'
     | '/member/payments'
     | '/member/profile'
-    | '/member/subscription'
     | '/admin'
     | '/member'
     | '/admin/members/$id'
@@ -239,7 +228,6 @@ export interface FileRouteTypes {
     | '/member/login'
     | '/member/payments'
     | '/member/profile'
-    | '/member/subscription'
     | '/admin/'
     | '/member/'
     | '/admin/members/$id'
@@ -303,13 +291,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
-    }
-    '/member/subscription': {
-      id: '/member/subscription'
-      path: '/subscription'
-      fullPath: '/member/subscription'
-      preLoaderRoute: typeof MemberSubscriptionRouteImport
-      parentRoute: typeof MemberRouteRoute
     }
     '/member/profile': {
       id: '/member/profile'
@@ -427,7 +408,6 @@ interface MemberRouteRouteChildren {
   MemberLoginRoute: typeof MemberLoginRoute
   MemberPaymentsRoute: typeof MemberPaymentsRoute
   MemberProfileRoute: typeof MemberProfileRoute
-  MemberSubscriptionRoute: typeof MemberSubscriptionRoute
   MemberIndexRoute: typeof MemberIndexRoute
 }
 
@@ -436,7 +416,6 @@ const MemberRouteRouteChildren: MemberRouteRouteChildren = {
   MemberLoginRoute: MemberLoginRoute,
   MemberPaymentsRoute: MemberPaymentsRoute,
   MemberProfileRoute: MemberProfileRoute,
-  MemberSubscriptionRoute: MemberSubscriptionRoute,
   MemberIndexRoute: MemberIndexRoute,
 }
 

@@ -1,22 +1,36 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { recordPayment, getSubscriptionsForPayment } from "~/lib/server-fns.js";
+import { recordPayment, getMembers } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
 import { Label } from "~/components/ui/label.js";
 import { Select } from "~/components/ui/select.js";
+import { Combobox } from "~/components/ui/combobox.js";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card.js";
 
 export const Route = createFileRoute("/admin/payments/new")({
-  loader: () => getSubscriptionsForPayment(),
+  loader: () => getMembers(),
   component: RecordPayment,
 });
 
+type Member = Awaited<ReturnType<typeof getMembers>>[number];
+
 function RecordPayment() {
-  const subs = Route.useLoaderData();
+  const members = Route.useLoaderData();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [amount, setAmount] = useState("");
+
+  function handleMemberSelect(member: Member | null) {
+    setSelectedMember(member);
+    if (member?.monthlyAmount) {
+      setAmount(Number(member.monthlyAmount).toFixed(2));
+    } else {
+      setAmount("");
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,15 +77,48 @@ function RecordPayment() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="subscriptionId">Member *</Label>
-              <Select id="subscriptionId" name="subscriptionId" required>
-                <option value="">Select a member</option>
-                {subs.map((s) => (
-                  <option key={s.subscriptionId} value={s.subscriptionId}>
-                    {s.memberName} ({s.memberEmail}) — ${Number(s.monthlyAmount).toFixed(2)}/mo
-                  </option>
-                ))}
-              </Select>
+              <Label>Member *</Label>
+              <Combobox
+                options={members}
+                value={selectedMember}
+                onSelect={handleMemberSelect}
+                getOptionValue={(m) => m.id}
+                getOptionLabel={(m) =>
+                  m.userName
+                    ? `${m.userName} (${m.userEmail})`
+                    : m.userEmail ?? ""
+                }
+                filterOption={(m, q) => {
+                  const lower = q.toLowerCase();
+                  return (
+                    (m.userName?.toLowerCase().includes(lower) ?? false) ||
+                    (m.userEmail?.toLowerCase().includes(lower) ?? false)
+                  );
+                }}
+                renderOption={(m) => (
+                  <div>
+                    <div className="font-medium">{m.userName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {m.userEmail}
+                      {m.monthlyAmount
+                        ? ` — $${Number(m.monthlyAmount).toFixed(2)}/mo`
+                        : ""}
+                    </div>
+                  </div>
+                )}
+                placeholder="Search by name or email..."
+              />
+              <input
+                type="hidden"
+                name="subscriptionId"
+                value={selectedMember?.subscriptionId ?? ""}
+                required
+              />
+              {selectedMember && !selectedMember.subscriptionId && (
+                <p className="text-sm text-amber-600">
+                  This member has no active subscription. A payment cannot be recorded.
+                </p>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -84,6 +131,8 @@ function RecordPayment() {
                   step="0.01"
                   min="0"
                   required
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -110,7 +159,10 @@ function RecordPayment() {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={loading}>
+              <Button
+                type="submit"
+                disabled={loading || (!!selectedMember && !selectedMember.subscriptionId)}
+              >
                 {loading ? "Recording..." : "Record Payment"}
               </Button>
               <Button

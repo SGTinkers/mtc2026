@@ -11,11 +11,12 @@ import {
   user,
   auditLog,
 } from "~/db/schema.js";
-import { eq, desc, sql, and, lt, count } from "drizzle-orm";
+import { eq, desc, sql, and, count } from "drizzle-orm";
 import { auth } from "./auth.js";
 import { stripe } from "./stripe.js";
 import { sendWelcomeEmail, sendPaymentReceivedEmail } from "./notifications.js";
 import { env } from "~/env.js";
+import { queryMembersWithLatestSub } from "./members.repo.js";
 
 // ─── Auth helpers ───
 
@@ -73,39 +74,7 @@ export const getPlans = createServerFn({ method: "GET" }).handler(async () => {
 export const getMembers = createServerFn({ method: "GET" }).handler(
   async () => {
     await requireAdminSession();
-
-    const latestSub = db
-      .selectDistinctOn([subscriptions.memberId], {
-        memberId: subscriptions.memberId,
-        status: subscriptions.status,
-        monthlyAmount: subscriptions.monthlyAmount,
-        planId: subscriptions.planId,
-      })
-      .from(subscriptions)
-      .orderBy(subscriptions.memberId, desc(subscriptions.createdAt))
-      .as("latest_sub");
-
-    const result = await db
-      .select({
-        id: members.id,
-        userId: members.userId,
-        nric: members.nric,
-        address: members.address,
-        createdAt: members.createdAt,
-        userName: user.name,
-        userEmail: user.email,
-        userPhone: user.phoneNumber,
-        subStatus: latestSub.status,
-        planName: plans.name,
-        monthlyAmount: latestSub.monthlyAmount,
-      })
-      .from(members)
-      .leftJoin(user, eq(members.userId, user.id))
-      .leftJoin(latestSub, eq(latestSub.memberId, members.id))
-      .leftJoin(plans, eq(latestSub.planId, plans.id))
-      .orderBy(desc(members.createdAt));
-
-    return result;
+    return queryMembersWithLatestSub();
   },
 );
 
@@ -148,7 +117,7 @@ export const getMemberDetail = createServerFn({ method: "GET" })
       .where(eq(subscriptions.memberId, memberId))
       .orderBy(desc(subscriptions.createdAt));
 
-    const sub = subs[0];
+    const sub = subs[0] ?? null;
     let deps: typeof dependants.$inferSelect[] = [];
     let paymentHistory: (typeof payments.$inferSelect)[] = [];
 
@@ -165,7 +134,7 @@ export const getMemberDetail = createServerFn({ method: "GET" })
         .orderBy(desc(payments.createdAt));
     }
 
-    return { member, subscription: sub ?? null, dependants: deps, payments: paymentHistory };
+    return { member, subscription: sub, subscriptions: subs, dependants: deps, payments: paymentHistory };
   });
 
 // ─── Register member (admin walk-in) ───
@@ -369,28 +338,6 @@ export const getAllPayments = createServerFn({ method: "GET" }).handler(
       .orderBy(desc(payments.createdAt));
   },
 );
-
-// ─── Get subscriptions for payment dropdown ───
-
-export const getSubscriptionsForPayment = createServerFn({
-  method: "GET",
-}).handler(async () => {
-  await requireAdminSession();
-
-  return db
-    .select({
-      subscriptionId: subscriptions.id,
-      memberId: members.id,
-      memberName: user.name,
-      memberEmail: user.email,
-      monthlyAmount: subscriptions.monthlyAmount,
-      status: subscriptions.status,
-    })
-    .from(subscriptions)
-    .innerJoin(members, eq(subscriptions.memberId, members.id))
-    .innerJoin(user, eq(members.userId, user.id))
-    .orderBy(user.name);
-});
 
 // ─── Member portal server fns ───
 
@@ -751,6 +698,105 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     });
 
     return { url: checkoutSession.url };
+  });
+
+// ─── Update member profile (admin) ───
+
+export const adminUpdateMemberProfile = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      memberId: string;
+      name: string;
+      email: string;
+      phone: string;
+      nric: string;
+      address: string;
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+
+    const [member] = await db
+      .select()
+      .from(members)
+      .where(eq(members.id, data.memberId));
+    if (!member) throw new Error("Member not found");
+
+    await db
+      .update(user)
+      .set({ name: data.name, email: data.email, phoneNumber: data.phone || null })
+      .where(eq(user.id, member.userId));
+
+    await db
+      .update(members)
+      .set({ nric: data.nric || null, address: data.address || null })
+      .where(eq(members.id, data.memberId));
+
+    await db.insert(auditLog).values({
+      entityType: "member",
+      entityId: data.memberId,
+      action: "profile_updated",
+      newValue: { name: data.name, email: data.email, phone: data.phone, nric: data.nric, address: data.address },
+      performedBy: session.user.id,
+    });
+
+    return { success: true };
+  });
+
+// ─── Cancel subscription (admin) ───
+
+export const cancelSubscription = createServerFn({ method: "POST" })
+  .inputValidator((data: { subscriptionId: string }) => data)
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+
+    const [sub] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.id, data.subscriptionId));
+
+    if (!sub) throw new Error("Subscription not found");
+    if (sub.status === "cancelled") throw new Error("Already cancelled");
+
+    if (sub.stripeSubscriptionId) {
+      try {
+        await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+        // Webhook will handle DB update
+      } catch (e: any) {
+        if (e?.code === "resource_missing") {
+          // Stripe subscription doesn't exist — update DB directly
+          await db
+            .update(subscriptions)
+            .set({
+              status: "cancelled",
+              cancelledAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.id, data.subscriptionId));
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      await db
+        .update(subscriptions)
+        .set({
+          status: "cancelled",
+          cancelledAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(subscriptions.id, data.subscriptionId));
+    }
+
+    await db.insert(auditLog).values({
+      entityType: "subscription",
+      entityId: data.subscriptionId,
+      action: "cancelled",
+      newValue: { status: "cancelled" },
+      performedBy: session.user.id,
+    });
+
+    return { success: true };
   });
 
 export const createBillingPortalSession = createServerFn({

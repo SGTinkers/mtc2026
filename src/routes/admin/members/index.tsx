@@ -4,6 +4,7 @@ import { getMembers } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
 import { Badge } from "~/components/ui/badge.js";
+import { SubscriptionStatusBadge } from "~/components/subscription-status-badge.js";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card.js";
 import {
   Table,
@@ -19,14 +20,6 @@ export const Route = createFileRoute("/admin/members/")({
   loader: () => getMembers(),
   component: MembersList,
 });
-
-const statusVariant = {
-  active: "success",
-  pending_payment: "warning",
-  grace: "warning",
-  lapsed: "destructive",
-  cancelled: "secondary",
-} as const;
 
 function MembersList() {
   const members = Route.useLoaderData();
@@ -86,9 +79,7 @@ function MembersList() {
                   </TableCell>
                   <TableCell>
                     {m.subStatus ? (
-                      <Badge variant={statusVariant[m.subStatus] ?? "secondary"}>
-                        {m.subStatus.replace("_", " ")}
-                      </Badge>
+                      <SubscriptionStatusBadge status={m.subStatus} />
                     ) : (
                       <Badge variant="outline">No sub</Badge>
                     )}

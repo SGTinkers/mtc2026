@@ -18,6 +18,9 @@ export const Route = createFileRoute("/member")({
     if (!session) {
       throw redirect({ to: "/member/login" });
     }
+    if (session.user.role === "admin") {
+      throw redirect({ to: "/admin" });
+    }
     return { session };
   },
   component: MemberLayout,

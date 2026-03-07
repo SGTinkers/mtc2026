@@ -103,7 +103,7 @@ function AdminDashboard() {
 
   return (
     <div className="flex flex-col gap-8 pb-10">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Dashboard</h2>
       </div>
       

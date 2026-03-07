@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { getMemberDetail, cancelSubscription, adminUpdateMemberProfile } from "~/lib/server-fns.js";
 import { SubscriptionStatusBadge } from "~/components/subscription-status-badge.js";
-import { Button } from "~/components/ui/button.js";
+import { Button, buttonVariants } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
 import { Label } from "~/components/ui/label.js";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card.js";
@@ -294,21 +294,20 @@ function MemberDetail() {
           <div className="flex items-center justify-between">
             <CardTitle>Payment History</CardTitle>
             {subscription && (
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  to="/admin/payments/new"
-                  search={{
-                    memberId: member.id,
-                    memberName: member.userName,
-                    memberEmail: member.userEmail,
-                    subscriptionId: subscription.id,
-                    monthlyAmount: Number(subscription.monthlyAmount),
-                    amount: Number(subscription.monthlyAmount).toFixed(2),
-                  }}
-                >
-                  Record Payment
-                </Link>
-              </Button>
+              <Link
+                to="/admin/payments/new"
+                search={{
+                  memberId: member.id,
+                  memberName: member.userName,
+                  memberEmail: member.userEmail,
+                  subscriptionId: subscription.id,
+                  monthlyAmount: Number(subscription.monthlyAmount),
+                  amount: Number(subscription.monthlyAmount).toFixed(2),
+                }}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                Record Payment
+              </Link>
             )}
           </div>
         </CardHeader>

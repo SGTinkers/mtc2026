@@ -4,9 +4,10 @@ import { recordPayment, searchMembersForPayment } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
 import { Label } from "~/components/ui/label.js";
-import { Select } from "~/components/ui/select.js";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "~/components/ui/select.js";
 import { Combobox } from "~/components/ui/combobox.js";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card.js";
+import { DatePicker } from "~/components/ui/date-picker.js";
 
 type PaymentSearch = {
   memberId?: string;
@@ -39,14 +40,13 @@ type Member = Awaited<ReturnType<typeof searchMembersForPayment>>[number];
 
 function RecordPayment() {
   const search = Route.useSearch();
-  const navigate = useNavigate();
+  const navigate = useNavigate({ from: Route.fullPath });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const updateSearch = useCallback(
     (updates: Partial<PaymentSearch>) =>
       navigate({
-        to: "/admin/payments/new",
         search: (prev) => ({ ...prev, ...updates }),
         replace: true,
       }),
@@ -182,30 +182,31 @@ function RecordPayment() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="method">Payment Method *</Label>
+                <Label>Payment Method *</Label>
                 <Select
-                  id="method"
-                  required
                   value={search.method ?? ""}
-                  onChange={(e) => updateSearch({ method: e.target.value || undefined })}
+                  onValueChange={(v) => updateSearch({ method: v || undefined })}
                 >
-                  <option value="">Select method</option>
-                  <option value="cash">Cash</option>
-                  <option value="giro">GIRO</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="paynow">PayNow</option>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="giro">GIRO</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="paynow">PayNow</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="periodMonth">Period Month</Label>
-                <Input
-                  id="periodMonth"
-                  type="month"
-                  value={search.periodMonth ?? ""}
-                  onChange={(e) => updateSearch({ periodMonth: e.target.value || undefined })}
+                <Label>Period Month</Label>
+                <DatePicker
+                  value={search.periodMonth ? `${search.periodMonth}-01` : ""}
+                  onChange={(v) => updateSearch({ periodMonth: v ? v.slice(0, 7) : undefined })}
+                  placeholder="Select month"
                 />
               </div>
               <div className="space-y-2">

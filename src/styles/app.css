@@ -21,4 +21,33 @@
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
+
+  /* Landing page tokens */
+  --color-cream: #FFFDF5;
+  --color-g1: #0D7C5F;
+  --color-g2: #0A6B51;
+  --color-g3: #085A44;
+  --color-gd: #064234;
+  --color-gdeep: #032A21;
+  --color-gold: #F5C842;
+  --color-gold-s: #FEF3C7;
+  --color-mint: #2DD4A8;
+  --color-mint-l: #A7F3D0;
+  --color-txt: #1A1A1A;
+  --color-txt2: #4A5568;
+  --color-txt3: #94A3B8;
+  --font-family-heading: 'Fraunces', serif;
+  --font-family-body: 'Plus Jakarta Sans', sans-serif;
+}
+
+@media (min-width: 1024px) {
+  .landing-zoom {
+    zoom: 1.5;
+  }
+}
+
+@media (min-width: 1536px) {
+  .landing-zoom {
+    zoom: 1.75;
+  }
 }

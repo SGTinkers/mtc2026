@@ -94,7 +94,7 @@ function MemberDetail() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Input id="email" type="email" value={form.email} disabled className="bg-muted" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone</Label>

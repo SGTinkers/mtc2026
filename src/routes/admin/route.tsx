@@ -33,7 +33,7 @@ function AdminLayout() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <aside className="flex w-64 flex-col border-r border-border bg-card">
         <div className="border-b border-border p-6">
           <div className="flex items-center gap-3">

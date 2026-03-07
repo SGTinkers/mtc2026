@@ -279,15 +279,9 @@ function DonatePage() {
   const [showCustom, setShowCustom] = useState(isDefaultCustom);
   const [perksKey, setPerksKey] = useState(0);
   const [shimmerTick, setShimmerTick] = useState(0);
-  const [initialLoad, setInitialLoad] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const amountGridRef = useRef<HTMLDivElement>(null);
   const prevTierRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setInitialLoad(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
 
   const effectiveAmount = isCustom ? Number(customAmount) || 0 : amount ?? 0;
   const hasSelection = amount !== null || isCustom;
@@ -391,13 +385,13 @@ function DonatePage() {
             <label className="text-xs font-bold tracking-[0.5px] text-g2 uppercase">
               Monthly amount
             </label>
-            <div ref={amountGridRef} className={`${initialLoad ? "donate-btn-stagger" : ""} grid grid-cols-4 gap-2.5 lg:gap-3`}>
+            <div ref={amountGridRef} className="grid grid-cols-4 gap-2.5 lg:gap-3">
               {PRESET_AMOUNTS.map((val) => (
                 <button
                   key={val}
                   onClick={() => handlePreset(val)}
                   className={`flex flex-col items-center gap-0.5 rounded-2xl py-4 lg:py-5 font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold transition-all duration-300 ${!isCustom && amount === val
-                    ? "bg-gdeep text-gold ring-2 ring-gold/30 scale-[1.03] donate-btn-selected"
+                    ? "bg-gdeep text-gold ring-2 ring-gold/30"
                     : "bg-white text-gd border border-gray-200 hover:border-g1/30"
                     }`}
                 >
@@ -447,7 +441,11 @@ function DonatePage() {
             <div className="perks-section-enter flex flex-col gap-6 lg:gap-8">
               {/* Perks intro */}
               <div className="flex flex-col items-center gap-2 text-center pt-2">
-                <span className="donate-gift-emoji text-2xl">🎁</span>
+                <span className="donate-gift-emoji">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 text-gold">
+                    <rect x="3" y="8" width="18" height="4" rx="1" /><rect x="3" y="12" width="18" height="8" rx="1" /><path d="M12 8v12" /><path d="M19 12v8" /><path d="M5 12v8" /><path d="M12 8c-2-4-6-4-6-1s4 1 6 1" /><path d="M12 8c2-4 6-4 6-1s-4 1-6 1" />
+                  </svg>
+                </span>
                 <h2 className="font-[family-name:var(--font-family-heading)] text-xl lg:text-2xl font-bold text-gd">
                   A gift from your masjid
                 </h2>

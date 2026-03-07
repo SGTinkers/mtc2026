@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -8,6 +9,26 @@ export const Route = createFileRoute("/")({
 const cx = "mx-auto w-full max-w-md lg:max-w-2xl 2xl:max-w-3xl px-6 lg:px-10";
 
 function LandingPage() {
+  const [selectedAmount, setSelectedAmount] = useState(20);
+  const [hadithVisible, setHadithVisible] = useState(false);
+  const hadithRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = hadithRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHadithVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-cream font-[family-name:var(--font-family-body)]">
       {/* Hero Section */}
@@ -28,7 +49,7 @@ function LandingPage() {
           </h1>
 
           <p className="max-w-sm lg:max-w-md 2xl:max-w-lg text-center text-[15px] lg:text-lg 2xl:text-xl leading-[1.7] text-white/85">
-            Every prayer, class, and mosque operations — they happen because
+            Every prayer, class, and mosque operations. They happen because
             people like you give consistently. Not once. Every month.
           </p>
 
@@ -64,7 +85,7 @@ function LandingPage() {
 
           <div className="flex max-w-lg 2xl:max-w-xl flex-col items-center gap-5 lg:gap-7">
             <p className="reveal reveal-delay-2 w-full text-center text-[15px] lg:text-base 2xl:text-lg leading-[1.75] text-txt2">
-              Every month, Masjid Ar-Raudhah serves hundreds of families —
+              Every month, Masjid Ar-Raudhah serves hundreds of families:
               daily prayers, Friday sermons, funeral services, religious
               education, youth programmes, and community support.
             </p>
@@ -72,7 +93,7 @@ function LandingPage() {
             <p className="reveal reveal-delay-3 w-full text-center text-[15px] lg:text-base 2xl:text-lg leading-[1.75] text-txt2">
               All of this costs money. Electricity, staff salaries,
               maintenance, course materials, burial services. One-off
-              donations help — but they don&apos;t keep the lights on
+              donations help, but they don&apos;t keep the lights on
               year-round.
             </p>
 
@@ -113,17 +134,29 @@ function LandingPage() {
           <div className="flex w-full max-w-md lg:max-w-lg flex-col md:mx-auto">
             {[
               {
-                emoji: "💡",
+                icon: (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white">
+                    <path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 1 4 12.9V17H8v-2.1A7 7 0 0 1 12 2z" />
+                  </svg>
+                ),
                 title: "Lights stay on",
                 desc: "Electricity & air-conditioning for 5 daily prayers",
               },
               {
-                emoji: "🤲",
+                icon: (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white">
+                    <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 16" />
+                  </svg>
+                ),
                 title: "Asatizah keep teaching",
                 desc: "Salaries for the people who lead prayers & guide the community",
               },
               {
-                emoji: "📚",
+                icon: (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-white">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /><path d="M8 7h6" /><path d="M8 11h4" />
+                  </svg>
+                ),
                 title: "Knowledge keeps flowing",
                 desc: "Religious classes, Quran recitations & youth programmes",
                 last: true,
@@ -138,7 +171,7 @@ function LandingPage() {
                         "linear-gradient(135deg, #0D7C5F 0%, #2DD4A8 100%)",
                     }}
                   >
-                    <span className="text-lg lg:text-2xl 2xl:text-3xl">{item.emoji}</span>
+                    {item.icon}
                   </div>
                   {!item.last && (
                     <div className="h-10 lg:h-14 w-0.5 bg-white/10" />
@@ -162,7 +195,7 @@ function LandingPage() {
               Small amounts, big impact.
             </h3>
             <p className="w-full text-center text-[13px] lg:text-sm 2xl:text-base leading-[1.55] text-white/60">
-              Your $5 alone won&apos;t cover it all — but when hundreds give
+              Your $5 alone won&apos;t cover it all, but when hundreds give
               together, every single month, it does.
             </p>
             <Link
@@ -178,18 +211,38 @@ function LandingPage() {
 
       {/* Hadith Section */}
       <section
+        ref={hadithRef}
         className="py-12 lg:py-20 2xl:py-24"
         style={{
           background: "linear-gradient(135deg, #085A44 0%, #0D7C5F 100%)",
         }}
       >
         <div className={`${cx} flex flex-col items-center justify-center gap-3 lg:gap-5`}>
-          <p className="reveal-quote max-w-sm lg:max-w-lg 2xl:max-w-xl text-center font-[family-name:var(--font-family-heading)] text-xl lg:text-3xl 2xl:text-4xl italic leading-[1.6] text-white/90">
-            &ldquo;The most beloved of deeds to Allah are those that are most
-            consistent, even if they are small.&rdquo;
+          <p className="max-w-sm lg:max-w-lg 2xl:max-w-xl text-center font-[family-name:var(--font-family-heading)] text-xl lg:text-3xl 2xl:text-4xl italic leading-[1.6] text-white/90">
+            {"\u201CThe most beloved of deeds to Allah are those that are most consistent, even if they are small.\u201D"
+              .split(" ")
+              .map((word, i) => (
+                <span
+                  key={i}
+                  className="inline-block transition-all duration-500"
+                  style={{
+                    opacity: hadithVisible ? 1 : 0,
+                    transform: hadithVisible ? "translateY(0)" : "translateY(8px)",
+                    transitionDelay: hadithVisible ? `${i * 80}ms` : "0ms",
+                  }}
+                >
+                  {word}&nbsp;
+                </span>
+              ))}
           </p>
-          <p className="reveal reveal-delay-3 text-center text-xs lg:text-sm 2xl:text-base font-semibold text-white/40">
-            — Prophet Muhammad ﷺ (Bukhari &amp; Muslim)
+          <p
+            className="text-center text-xs lg:text-sm 2xl:text-base font-semibold text-white/40 transition-opacity duration-700"
+            style={{
+              opacity: hadithVisible ? 1 : 0,
+              transitionDelay: hadithVisible ? "1.6s" : "0ms",
+            }}
+          >
+            - Prophet Muhammad ﷺ (Bukhari &amp; Muslim)
           </p>
         </div>
       </section>
@@ -212,35 +265,33 @@ function LandingPage() {
           </p>
 
           {/* Pricing Cards */}
-          <div className="flex w-full max-w-md lg:max-w-lg gap-3 lg:gap-5 md:mx-auto">
-            {[
-              { amount: "$5", highlighted: false },
-              { amount: "$20", highlighted: true },
-              { amount: "$50", highlighted: false },
-            ].map((tier, i) => (
-              <div
-                key={tier.amount}
-                className={`reveal-scale reveal-delay-${i + 2} flex flex-1 flex-col items-center gap-0.5 rounded-2xl lg:rounded-3xl p-5 lg:p-8 2xl:p-10 ${tier.highlighted
+          <div className="flex w-full max-w-md lg:max-w-lg gap-3 lg:gap-5 md:mx-auto justify-center">
+            {[5, 20, 50].map((val) => (
+              <button
+                key={val}
+                onClick={() => setSelectedAmount(val)}
+                className={`flex w-[100px] lg:w-[140px] 2xl:w-[160px] flex-col items-center gap-0.5 rounded-2xl lg:rounded-3xl p-5 lg:p-8 2xl:p-10 transition-all duration-300 cursor-pointer ${selectedAmount === val
                   ? "border-2 border-gold bg-white/12"
-                  : "border-2 border-white/12 bg-white/[0.06]"
+                  : "border-2 border-white/12 bg-white/[0.06] hover:border-white/25"
                   }`}
               >
                 <span
-                  className={`font-[family-name:var(--font-family-heading)] text-[28px] lg:text-[44px] 2xl:text-[52px] font-extrabold ${tier.highlighted ? "text-gold" : "text-white"
+                  className={`font-[family-name:var(--font-family-heading)] text-[28px] lg:text-[44px] 2xl:text-[52px] font-extrabold ${selectedAmount === val ? "text-gold" : "text-white"
                     }`}
                 >
-                  {tier.amount}
+                  ${val}
                 </span>
                 <span className="text-[11px] lg:text-sm 2xl:text-base font-medium text-white/50">
                   /month
                 </span>
-              </div>
+              </button>
             ))}
           </div>
 
           <Link
             to="/donate"
-            className="reveal reveal-delay-5 flex items-center gap-2 rounded-full bg-gold px-11 py-[15px] lg:px-14 lg:py-5 2xl:px-16 2xl:py-6 font-bold lg:text-lg 2xl:text-xl text-gdeep"
+            search={{ amount: selectedAmount }}
+            className="reveal reveal-delay-5 flex items-center gap-2 rounded-full bg-gold px-11 py-[15px] lg:px-14 lg:py-5 2xl:px-16 2xl:py-6 font-bold lg:text-lg 2xl:text-xl text-gdeep transition-all"
           >
             Start my monthly gift
             <ArrowRight size={16} className="lg:h-5 lg:w-5" />
@@ -266,9 +317,13 @@ function LandingPage() {
             <div className="gift-shimmer" />
 
             {/* Gift emoji with glow + sparkles */}
-            <span className="gift-sparkle-wrap text-[64px] lg:text-[88px] 2xl:text-[100px]">
+            <span className="gift-sparkle-wrap">
               <span className="gift-glow" />
-              <span className="gift-emoji">🎁</span>
+              <span className="gift-emoji">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-[64px] w-[64px] lg:h-[88px] lg:w-[88px] 2xl:h-[100px] 2xl:w-[100px] text-gold">
+                  <rect x="3" y="8" width="18" height="4" rx="1" /><rect x="3" y="12" width="18" height="8" rx="1" /><path d="M12 8v12" /><path d="M19 12v8" /><path d="M5 12v8" /><path d="M12 8c-2-4-6-4-6-1s4 1 6 1" /><path d="M12 8c2-4 6-4 6-1s-4 1-6 1" />
+                </svg>
+              </span>
             </span>
 
             <h2 className="max-w-sm lg:max-w-md 2xl:max-w-lg text-center font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl 2xl:text-4xl leading-[1.2] font-bold tracking-tight text-white">
@@ -276,15 +331,15 @@ function LandingPage() {
               <br />a little something for you too.
             </h2>
             <p className="max-w-sm lg:max-w-md 2xl:max-w-lg text-center text-sm lg:text-base 2xl:text-lg leading-[1.65] text-white/80">
-              Monthly givers unlock exclusive perks — from covered funeral
+              Monthly givers unlock exclusive perks, from covered funeral
               services to course discounts for your family.
             </p>
-            <div className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 lg:px-7 lg:py-3">
+            <Link to="/donate" search={{ amount: selectedAmount }} className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 lg:px-7 lg:py-3 hover:bg-white/15 transition-all cursor-pointer">
               <span className="text-xs lg:text-sm 2xl:text-base font-semibold text-white/80">
                 You&apos;ll discover all perks in the next step
               </span>
               <ArrowRight size={12} className="text-white/80 lg:h-4 lg:w-4" />
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -341,7 +396,7 @@ function LandingPage() {
             {[
               {
                 quote:
-                  "It's just $5 a month but knowing it helps keep the masjid running for everyone — that's what matters to me. I used to give whenever I remembered, now it's consistent and I feel part of something bigger.",
+                  "It's just $5 a month but knowing it helps keep the masjid running for everyone. That's what matters to me. I used to give whenever I remembered, now it's consistent and I feel part of something bigger.",
                 name: "Ahmad R.",
                 since: "Member since 2024",
                 dir: "reveal-left",
@@ -387,7 +442,7 @@ function LandingPage() {
             </h2>
           </div>
           <p className="reveal reveal-delay-3 max-w-sm lg:max-w-md 2xl:max-w-lg text-center text-[15px] lg:text-lg 2xl:text-xl leading-[1.65] text-white/65">
-            Join hundreds of families who give a little every month — so
+            Join hundreds of families who give a little every month, so
             your masjid never has to worry about keeping its doors open.
           </p>
           <Link

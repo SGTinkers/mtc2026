@@ -691,7 +691,7 @@ export const createDonateCheckout = createServerFn({ method: "POST" })
 
 // ─── Donate checkout info (no auth required) ───
 
-export const getCheckoutSubscriptionInfo = createServerFn({ method: "GET" })
+export const getCheckoutSubscriptionInfo = createServerFn({ method: "POST" })
   .inputValidator((data: { sessionId: string }) => data)
   .handler(async ({ data }) => {
     try {
@@ -717,7 +717,8 @@ export const getCheckoutSubscriptionInfo = createServerFn({ method: "GET" })
         .where(eq(subscriptions.stripeSubscriptionId, stripeSubId));
 
       return result ?? null;
-    } catch {
+    } catch (error) {
+      console.error("getCheckoutSubscriptionInfo error:", error);
       return null;
     }
   });

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Users, Shield, CheckCircle, Mail } from "lucide-react";
+import { ArrowRight, Check, Users, Shield, CheckCircle, Mail, AlertCircle } from "lucide-react";
 import {
   createDonateCheckout,
   getCheckoutSubscriptionInfo,
@@ -60,14 +60,19 @@ type SubInfo = {
 function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
   const [subInfo, setSubInfo] = useState<SubInfo | null>(null);
   const [loading, setLoading] = useState(!!sessionId);
+  const [error, setError] = useState(!sessionId);
 
   useEffect(() => {
     if (!sessionId) return;
     getCheckoutSubscriptionInfo({ data: { sessionId } })
       .then((info) => {
-        if (info) setSubInfo(info as SubInfo);
+        if (info) {
+          setSubInfo(info as SubInfo);
+        } else {
+          setError(true);
+        }
       })
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [sessionId]);
 
@@ -243,28 +248,49 @@ function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
     );
   }
 
-  // Fallback: no session_id or fetch failed
+  // Error state: no session_id, fetch failed, or null result
   return (
-    <div className="min-h-screen bg-cream font-[family-name:var(--font-family-body)] flex flex-col items-center justify-center px-6">
-      <div className="success-hero-animate flex flex-col items-center gap-6 max-w-md text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-g1/10">
-          <CheckCircle size={40} className="text-g1" />
+    <div className="min-h-screen font-[family-name:var(--font-family-body)] flex flex-col">
+      <div
+        className="flex flex-1 flex-col items-center justify-center px-6 py-12"
+        style={{
+          background:
+            "linear-gradient(170deg, #032A21 0%, #085A44 25%, #0D7C5F 55%, #2DD4A8 100%)",
+        }}
+      >
+        <div className="success-hero-animate flex flex-col items-center gap-5 max-w-md text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+            <AlertCircle size={40} className="text-gold" />
+          </div>
+          <h1 className="font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold text-white">
+            Something went wrong
+          </h1>
+          <p className="text-base text-white/80 leading-relaxed">
+            Your payment may still have been processed. Please check your email
+            for a confirmation, or contact us for help.
+          </p>
+          <Link
+            to="/"
+            className="flex items-center gap-2 rounded-full bg-gold px-8 py-4 font-bold text-gdeep hover:brightness-105 transition-all donate-cta-glow"
+          >
+            Back to Homepage
+            <ArrowRight size={16} />
+          </Link>
         </div>
-        <h1 className="font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold text-gd">
-          Welcome to Skim Pintar!
-        </h1>
-        <p className="text-base text-txt2 leading-relaxed">
-          Your subscription is active. Check your email for a login link to
-          access your member portal.
-        </p>
-        <Link
-          to="/"
-          className="flex items-center gap-2 rounded-full bg-gold px-8 py-3 font-bold text-gdeep hover:brightness-105 transition-all"
-        >
-          Back to Homepage
-          <ArrowRight size={16} />
-        </Link>
       </div>
+
+      <footer className="border-t border-gray-200 bg-cream p-6">
+        <div className="mx-auto flex max-w-md flex-col items-center gap-1">
+          <img
+            src="/logo.webp"
+            alt="Masjid Ar-Raudhah"
+            className="h-8 w-auto opacity-40"
+          />
+          <span className="text-xs text-txt3">
+            Masjid Ar-Raudhah &middot; Skim Pintar
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

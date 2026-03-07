@@ -475,11 +475,7 @@ function DonatePage() {
             <div className="perks-section-enter flex flex-col gap-6 lg:gap-8">
               {/* Perks intro */}
               <div className="flex flex-col items-center gap-2 text-center pt-2">
-                <span className="donate-gift-emoji">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 text-gold">
-                    <rect x="3" y="8" width="18" height="4" rx="1" /><rect x="3" y="12" width="18" height="8" rx="1" /><path d="M12 8v12" /><path d="M19 12v8" /><path d="M5 12v8" /><path d="M12 8c-2-4-6-4-6-1s4 1 6 1" /><path d="M12 8c2-4 6-4 6-1s-4 1-6 1" />
-                  </svg>
-                </span>
+                <span className="donate-gift-emoji text-3xl">🎁</span>
                 <h2 className="font-[family-name:var(--font-family-heading)] text-xl lg:text-2xl font-bold text-gd">
                   A gift from your masjid
                 </h2>

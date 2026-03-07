@@ -609,6 +609,7 @@ export const getMemberDashboard = createServerFn({ method: "GET" }).handler(
         status: subscriptions.status,
         monthlyAmount: subscriptions.monthlyAmount,
         paymentMethod: subscriptions.paymentMethod,
+        stripeCustomerId: subscriptions.stripeCustomerId,
         coverageStart: subscriptions.coverageStart,
         coverageUntil: subscriptions.coverageUntil,
         graceUntil: subscriptions.graceUntil,
@@ -1391,6 +1392,107 @@ Only include fields you can confidently read. Omit empty/unreadable fields. Retu
     } catch {
       return {};
     }
+  });
+
+// ─── Update subscription amount (member self-service) ───
+
+export const updateSubscriptionAmount = createServerFn({ method: "POST" })
+  .inputValidator((data: { monthlyAmount: number }) => data)
+  .handler(async ({ data }) => {
+    const session = await getSession();
+
+    if (data.monthlyAmount < 5) throw new Error("Minimum amount is $5");
+
+    // Get member
+    const [member] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(eq(members.userId, session.user.id));
+    if (!member) throw new Error("Member not found");
+
+    // Get active subscription with Stripe ID
+    const [sub] = await db
+      .select({
+        id: subscriptions.id,
+        stripeSubscriptionId: subscriptions.stripeSubscriptionId,
+        planId: subscriptions.planId,
+        monthlyAmount: subscriptions.monthlyAmount,
+        planSlug: plans.slug,
+      })
+      .from(subscriptions)
+      .innerJoin(plans, eq(subscriptions.planId, plans.id))
+      .where(
+        and(
+          eq(subscriptions.memberId, member.id),
+          eq(subscriptions.status, "active"),
+        ),
+      )
+      .orderBy(desc(subscriptions.createdAt))
+      .limit(1);
+
+    if (!sub) throw new Error("No active subscription found");
+    if (!sub.stripeSubscriptionId)
+      throw new Error("Only Stripe subscriptions can be updated");
+
+    // Determine new plan
+    const newPlanSlug = data.monthlyAmount >= 20 ? "pintar_plus" : "pintar";
+
+    // If downgrading from pintar_plus, check for dependants
+    if (sub.planSlug === "pintar_plus" && newPlanSlug === "pintar") {
+      const [depCount] = await db
+        .select({ count: count() })
+        .from(dependants)
+        .where(eq(dependants.subscriptionId, sub.id));
+      if (depCount && depCount.count > 0) {
+        throw new Error(
+          "Please remove all dependants before downgrading from Pintar Plus",
+        );
+      }
+    }
+
+    // Get new plan record
+    const [newPlan] = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.slug, newPlanSlug));
+    if (!newPlan) throw new Error("Plan not found");
+
+    // Retrieve Stripe subscription to get subscription item ID
+    const stripeSub = await stripe.subscriptions.retrieve(
+      sub.stripeSubscriptionId,
+    );
+    const itemId = stripeSub.items.data[0]?.id;
+    if (!itemId) throw new Error("Stripe subscription item not found");
+
+    // Create a new price and update subscription
+    const newPrice = await stripe.prices.create({
+      currency: "sgd",
+      unit_amount: data.monthlyAmount * 100,
+      recurring: { interval: "month" },
+      product_data: { name: `Skim Pintar – ${newPlan.name}` },
+    });
+
+    await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+      items: [{ id: itemId, price: newPrice.id }],
+      proration_behavior: "always_invoice",
+    });
+
+    // Update our DB
+    await db
+      .update(subscriptions)
+      .set({
+        planId: newPlan.id,
+        monthlyAmount: String(data.monthlyAmount),
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.id, sub.id));
+
+    return {
+      success: true,
+      planName: newPlan.name,
+      planSlug: newPlan.slug,
+      monthlyAmount: data.monthlyAmount,
+    };
   });
 
 export const createBillingPortalSession = createServerFn({

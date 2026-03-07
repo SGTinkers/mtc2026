@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getAdminStats } from "~/lib/server-fns.js";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "~/components/ui/card.js";
-import { Users, CreditCard, DollarSign, Clock, ArrowUpCircle, Heart } from "lucide-react";
+import { Users, CreditCard, DollarSign, Clock, ArrowUpCircle, Heart, UserPlus } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart.js";
 
@@ -278,6 +278,15 @@ function AdminDashboard() {
             <CardDescription className="text-sm text-primary/60">Common admin tasks</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-6 pt-4">
+             <a href="/admin/members/new" className="flex items-center gap-6 p-6 rounded-2xl border-2 border-gold/30 bg-gold/5 hover:bg-gold/10 transition-all hover:scale-[1.01] hover:border-gold/50 group">
+               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/20 group-hover:bg-gold/30 transition-colors">
+                 <UserPlus className="h-7 w-7 text-gold" />
+               </div>
+               <div>
+                 <div className="text-lg font-bold text-primary">Walk-In Registration</div>
+                 <div className="text-sm text-primary/60 font-medium">Register a new member with the guided wizard</div>
+               </div>
+             </a>
              <a href="/admin/members" className="flex items-center gap-6 p-6 rounded-2xl border-2 border-primary/10 hover:bg-primary/5 transition-all hover:scale-[1.01] hover:border-primary/30 group">
                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
                  <Users className="h-7 w-7 text-primary" />

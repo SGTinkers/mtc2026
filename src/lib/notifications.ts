@@ -7,6 +7,7 @@ import PaymentFailedEmail from "~/emails/payment-failed.js";
 import GracePeriodEmail from "~/emails/grace-period.js";
 import CoverageLapsedEmail from "~/emails/coverage-lapsed.js";
 import CoverageReactivatedEmail from "~/emails/coverage-reactivated.js";
+import GiroApprovedEmail from "~/emails/giro-approved.js";
 import { createElement } from "react";
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -95,5 +96,14 @@ export async function sendCoverageReactivatedEmail(email: string) {
     to: email,
     subject: "Coverage Reactivated - Skim Pintar",
     react: createElement(CoverageReactivatedEmail),
+  });
+}
+
+export async function sendGiroApprovedEmail(email: string, name: string) {
+  await send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: "GIRO Approved - Skim Pintar",
+    react: createElement(GiroApprovedEmail, { name }),
   });
 }

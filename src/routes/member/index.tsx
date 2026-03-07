@@ -696,6 +696,13 @@ const statusConfig = {
     bg: "bg-amber-50",
     ring: "ring-amber-200",
   },
+  pending_approval: {
+    label: "Pending Approval",
+    icon: Clock,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    ring: "ring-amber-200",
+  },
   cancelled: {
     label: "Cancelled",
     icon: ShieldX,

@@ -3,6 +3,7 @@ import { Badge } from "~/components/ui/badge.js";
 const statusVariant = {
   active: "success",
   pending_payment: "warning",
+  pending_approval: "warning",
   grace: "warning",
   lapsed: "destructive",
   cancelled: "destructive",

@@ -70,6 +70,7 @@ export const verification = pgTable("verification", {
 
 export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "pending_payment",
+  "pending_approval",
   "active",
   "grace",
   "lapsed",

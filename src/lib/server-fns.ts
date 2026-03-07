@@ -14,7 +14,7 @@ import {
 import { eq, desc, sql, and, or, count, gte, lte, ilike, inArray } from "drizzle-orm";
 import { auth } from "./auth.js";
 import { stripe } from "./stripe.js";
-import { sendWelcomeEmail, sendPaymentReceivedEmail } from "./notifications.js";
+import { sendWelcomeEmail, sendPaymentReceivedEmail, sendGiroApprovedEmail } from "./notifications.js";
 import { env } from "~/env.js";
 import { queryMembersWithLatestSub, searchMembers as searchMembersRepo } from "./members.repo.js";
 
@@ -273,8 +273,19 @@ export const registerMember = createServerFn({ method: "POST" })
       email: string;
       phone?: string;
       nric?: string;
+      dob?: string;
       address?: string;
+      postalCode?: string;
       monthlyAmount: string;
+      paymentMethod?: "cash" | "giro" | "bank_transfer" | "paynow";
+      dependants?: Array<{
+        name: string;
+        nric?: string;
+        dob?: string;
+        phone?: string;
+        relationship: "spouse" | "child" | "parent" | "in_law" | "sibling";
+      }>;
+      initialPayment?: { amount: string; reference?: string };
     }) => data,
   )
   .handler(async ({ data }) => {
@@ -320,10 +331,26 @@ export const registerMember = createServerFn({ method: "POST" })
       .values({
         userId: newUser.user.id,
         nric: data.nric || null,
+        dob: data.dob || null,
         address: data.address || null,
+        postalCode: data.postalCode || null,
         createdBy: session.user.id,
       })
       .returning();
+
+    // Determine subscription status
+    const paymentMethod = data.paymentMethod || "cash";
+    const isGiro = paymentMethod === "giro";
+    const hasInitialPayment = data.initialPayment && Number(data.initialPayment.amount) > 0;
+
+    let status: "pending_payment" | "pending_approval" | "active";
+    if (isGiro) {
+      status = "pending_approval";
+    } else if (hasInitialPayment) {
+      status = "active";
+    } else {
+      status = "pending_payment";
+    }
 
     // Create subscription
     const today = new Date().toISOString().split("T")[0]!;
@@ -331,15 +358,41 @@ export const registerMember = createServerFn({ method: "POST" })
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     const coverageUntil = nextMonth.toISOString().split("T")[0]!;
 
-    await db.insert(subscriptions).values({
+    const [subscription] = await db.insert(subscriptions).values({
       memberId: member!.id,
       planId: matchedPlan.id,
       monthlyAmount: data.monthlyAmount,
-      status: "pending_payment",
+      status,
       paymentMethod: "manual",
       coverageStart: today,
-      coverageUntil: coverageUntil,
-    });
+      coverageUntil: status === "active" ? coverageUntil : today,
+    }).returning();
+
+    // Insert dependants if provided
+    if (data.dependants && data.dependants.length > 0 && subscription) {
+      for (const dep of data.dependants) {
+        await db.insert(dependants).values({
+          subscriptionId: subscription.id,
+          name: dep.name,
+          nric: dep.nric || null,
+          dob: dep.dob || null,
+          phone: dep.phone || null,
+          relationship: dep.relationship,
+          sameAddress: true,
+        });
+      }
+    }
+
+    // Record initial payment if provided (non-GIRO only)
+    if (hasInitialPayment && !isGiro && subscription) {
+      await db.insert(payments).values({
+        subscriptionId: subscription.id,
+        amount: data.initialPayment!.amount,
+        method: paymentMethod,
+        reference: data.initialPayment!.reference || null,
+        recordedBy: session.user.id,
+      });
+    }
 
     // Send welcome email
     try {
@@ -353,11 +406,68 @@ export const registerMember = createServerFn({ method: "POST" })
       entityType: "member",
       entityId: member!.id,
       action: "registered",
-      newValue: { name: data.name, email: data.email, plan: matchedPlan.slug },
+      newValue: { name: data.name, email: data.email, plan: matchedPlan.slug, paymentMethod, status },
       performedBy: session.user.id,
     });
 
     return member;
+  });
+
+// ─── Approve GIRO subscription (admin) ───
+
+export const approveGiroSubscription = createServerFn({ method: "POST" })
+  .inputValidator((data: { subscriptionId: string }) => data)
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+
+    const [sub] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.id, data.subscriptionId));
+
+    if (!sub) throw new Error("Subscription not found");
+    if (sub.status !== "pending_approval") throw new Error("Subscription is not pending approval");
+
+    const today = new Date().toISOString().split("T")[0]!;
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const coverageUntil = nextMonth.toISOString().split("T")[0]!;
+
+    await db
+      .update(subscriptions)
+      .set({
+        status: "active",
+        coverageStart: today,
+        coverageUntil,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.id, data.subscriptionId));
+
+    // Send GIRO approved email
+    try {
+      const [memberInfo] = await db
+        .select({ email: user.email, name: user.name })
+        .from(members)
+        .innerJoin(user, eq(members.userId, user.id))
+        .where(eq(members.id, sub.memberId));
+      if (memberInfo) {
+        await sendGiroApprovedEmail(memberInfo.email, memberInfo.name);
+      }
+    } catch {
+      // Don't fail if email fails
+    }
+
+    // Audit log
+    await db.insert(auditLog).values({
+      entityType: "subscription",
+      entityId: data.subscriptionId,
+      action: "giro_approved",
+      oldValue: { status: "pending_approval" },
+      newValue: { status: "active" },
+      performedBy: session.user.id,
+    });
+
+    return { success: true };
   });
 
 // ─── Record payment (admin) ───

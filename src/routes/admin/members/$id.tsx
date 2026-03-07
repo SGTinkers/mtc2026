@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { getMemberDetail, cancelSubscription, adminUpdateMemberProfile } from "~/lib/server-fns.js";
+import { getMemberDetail, cancelSubscription, adminUpdateMemberProfile, approveGiroSubscription } from "~/lib/server-fns.js";
 import { SubscriptionStatusBadge } from "~/components/subscription-status-badge.js";
 import { Button, buttonVariants } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
@@ -25,6 +25,7 @@ function MemberDetail() {
   const pastSubscriptions = subscriptions.slice(1);
   const router = useRouter();
   const [cancelling, setCancelling] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -54,6 +55,22 @@ function MemberDetail() {
     subscription &&
     subscription.status !== "cancelled" &&
     subscription.status !== "lapsed";
+
+  const canApproveGiro = subscription && subscription.status === "pending_approval";
+
+  async function handleApproveGiro() {
+    if (!subscription) return;
+    if (!window.confirm("Approve this GIRO subscription? The member's coverage will become active.")) return;
+    setApproving(true);
+    try {
+      await approveGiroSubscription({ data: { subscriptionId: subscription.id } });
+      router.invalidate();
+    } catch (e: any) {
+      alert(e.message || "Failed to approve GIRO");
+    } finally {
+      setApproving(false);
+    }
+  }
 
   async function handleCancel() {
     if (!subscription) return;
@@ -173,16 +190,28 @@ function MemberDetail() {
                 <CardTitle>Subscription</CardTitle>
                 <SubscriptionStatusBadge status={subscription.status} />
               </div>
-              {canCancel && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={cancelling}
-                  onClick={handleCancel}
-                >
-                  {cancelling ? "Cancelling…" : "Cancel Subscription"}
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {canApproveGiro && (
+                  <Button
+                    size="sm"
+                    disabled={approving}
+                    onClick={handleApproveGiro}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {approving ? "Approving…" : "Approve GIRO"}
+                  </Button>
+                )}
+                {canCancel && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={cancelling}
+                    onClick={handleCancel}
+                  >
+                    {cancelling ? "Cancelling…" : "Cancel Subscription"}
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>

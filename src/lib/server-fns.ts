@@ -54,11 +54,81 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(
       .from(subscriptions)
       .where(eq(subscriptions.status, "pending_payment"));
 
+    const [mrrData] = await db
+      .select({ mrr: sql<string>`coalesce(sum(${subscriptions.monthlyAmount}), 0)` })
+      .from(subscriptions)
+      .where(eq(subscriptions.status, "active"));
+
+    // Calculate donations for current month
+    // Donation is any payment amount that exceeds the plan's min_amount
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+
+    const [donationsData] = await db
+      .select({
+        totalDonations: sql<string>`coalesce(sum(${payments.amount} - ${plans.minAmount}), 0)`
+      })
+      .from(payments)
+      .innerJoin(subscriptions, eq(payments.subscriptionId, subscriptions.id))
+      .innerJoin(plans, eq(subscriptions.planId, plans.id))
+      .where(
+        and(
+          sql`${payments.createdAt} >= ${currentMonthStart.toISOString()}`,
+          sql`${payments.amount} > ${plans.minAmount}`
+        )
+      );
+
+    // Membership per plan breakdown
+    const planBreakdown = await db
+      .select({
+        planName: plans.name,
+        count: count(),
+      })
+      .from(subscriptions)
+      .innerJoin(plans, eq(subscriptions.planId, plans.id))
+      .where(eq(subscriptions.status, "active"))
+      .groupBy(plans.name);
+
+    // Yearly revenue by month (last 12 months)
+    const elevenMonthsAgo = new Date();
+    elevenMonthsAgo.setMonth(elevenMonthsAgo.getMonth() - 11);
+    elevenMonthsAgo.setDate(1);
+    elevenMonthsAgo.setHours(0, 0, 0, 0);
+
+    const monthlyRevenue = await db
+      .select({
+        month: sql<string>`to_char(${payments.createdAt}, 'Mon YYYY')`,
+        monthSort: sql<string>`to_char(${payments.createdAt}, 'YYYY-MM')`,
+        revenue: sql<string>`coalesce(sum(${payments.amount}), 0)`
+      })
+      .from(payments)
+      .where(sql`${payments.createdAt} >= ${elevenMonthsAgo.toISOString()}`)
+      .groupBy(sql`to_char(${payments.createdAt}, 'Mon YYYY')`, sql`to_char(${payments.createdAt}, 'YYYY-MM')`)
+      .orderBy(sql`to_char(${payments.createdAt}, 'YYYY-MM')`);
+
+    // Payment methods breakdown
+    const paymentMethods = await db
+      .select({
+        method: payments.method,
+        count: count()
+      })
+      .from(payments)
+      .groupBy(payments.method);
+
     return {
       totalMembers: memberCount!.count,
       activeSubscriptions: activeSubs!.count,
       totalRevenue: totalRevenue!.total,
       pendingPayments: pendingPayments!.count,
+      mrr: mrrData!.mrr,
+      donationsThisMonth: donationsData!.totalDonations,
+      planBreakdown,
+      monthlyRevenue: monthlyRevenue.map(m => ({ 
+        month: m.month, 
+        revenue: Number(m.revenue) 
+      })),
+      paymentMethods
     };
   },
 );

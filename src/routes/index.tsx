@@ -33,7 +33,7 @@ function LandingPage() {
           </p>
 
           <Link
-            to="/member/login"
+            to="/donate"
             className="flex items-center gap-2 rounded-full bg-gold px-10 py-[15px] lg:px-14 lg:py-5 2xl:px-16 2xl:py-6 font-bold lg:text-lg 2xl:text-xl text-gdeep"
           >
             Start giving monthly
@@ -82,7 +82,7 @@ function LandingPage() {
           </div>
 
           <Link
-            to="/member/login"
+            to="/donate"
             className="reveal reveal-delay-5 flex items-center gap-2 rounded-full bg-g1 px-8 py-[13px] lg:px-10 lg:py-4 2xl:px-12 2xl:py-5 text-sm lg:text-base 2xl:text-lg font-bold text-white"
           >
             Be one of them
@@ -166,7 +166,7 @@ function LandingPage() {
               together, every single month, it does.
             </p>
             <Link
-              to="/member/login"
+              to="/donate"
               className="flex items-center gap-2 rounded-full bg-gold px-8 py-[13px] lg:px-10 lg:py-4 text-sm lg:text-base font-bold text-gdeep"
             >
               Start giving monthly
@@ -239,7 +239,7 @@ function LandingPage() {
           </div>
 
           <Link
-            to="/member/login"
+            to="/donate"
             className="reveal reveal-delay-5 flex items-center gap-2 rounded-full bg-gold px-11 py-[15px] lg:px-14 lg:py-5 2xl:px-16 2xl:py-6 font-bold lg:text-lg 2xl:text-xl text-gdeep"
           >
             Start my monthly gift
@@ -391,7 +391,7 @@ function LandingPage() {
             your masjid never has to worry about keeping its doors open.
           </p>
           <Link
-            to="/member/login"
+            to="/donate"
             className="reveal reveal-delay-4 flex items-center gap-2 rounded-full bg-gold px-11 py-[15px] lg:px-14 lg:py-5 2xl:px-16 2xl:py-6 font-bold lg:text-lg 2xl:text-xl text-gdeep"
           >
             Start giving monthly

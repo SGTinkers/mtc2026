@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DonateRouteImport } from './routes/donate'
 import { Route as MemberRouteRouteImport } from './routes/member/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -28,6 +29,11 @@ import { Route as AdminPaymentsNewRouteImport } from './routes/admin/payments/ne
 import { Route as AdminMembersNewRouteImport } from './routes/admin/members/new'
 import { Route as AdminMembersIdRouteImport } from './routes/admin/members/$id'
 
+const DonateRoute = DonateRouteImport.update({
+  id: '/donate',
+  path: '/donate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MemberRouteRoute = MemberRouteRouteImport.update({
   id: '/member',
   path: '/member',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/member': typeof MemberRouteRouteWithChildren
+  '/donate': typeof DonateRoute
   '/admin/login': typeof AdminLoginRoute
   '/member/dependants': typeof MemberDependantsRoute
   '/member/login': typeof MemberLoginRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/donate': typeof DonateRoute
   '/admin/login': typeof AdminLoginRoute
   '/member/dependants': typeof MemberDependantsRoute
   '/member/login': typeof MemberLoginRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/member': typeof MemberRouteRouteWithChildren
+  '/donate': typeof DonateRoute
   '/admin/login': typeof AdminLoginRoute
   '/member/dependants': typeof MemberDependantsRoute
   '/member/login': typeof MemberLoginRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/member'
+    | '/donate'
     | '/admin/login'
     | '/member/dependants'
     | '/member/login'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/donate'
     | '/admin/login'
     | '/member/dependants'
     | '/member/login'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/member'
+    | '/donate'
     | '/admin/login'
     | '/member/dependants'
     | '/member/login'
@@ -243,12 +255,20 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   MemberRouteRoute: typeof MemberRouteRouteWithChildren
+  DonateRoute: typeof DonateRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiWebhooksStripeRoute: typeof ApiWebhooksStripeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/donate': {
+      id: '/donate'
+      path: '/donate'
+      fullPath: '/donate'
+      preLoaderRoute: typeof DonateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/member': {
       id: '/member'
       path: '/member'
@@ -428,6 +448,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   MemberRouteRoute: MemberRouteRouteWithChildren,
+  DonateRoute: DonateRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiWebhooksStripeRoute: ApiWebhooksStripeRoute,
 }

@@ -283,3 +283,23 @@
 .reveal-gift-card.in-view .gift-glow {
   animation: glow-ring 1.2s ease-out 0.35s forwards;
 }
+
+/* Auto-playing shimmer for donate page cards */
+.auto-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.08) 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  animation: shimmer-sweep 2.5s ease-in-out 0.5s infinite;
+}

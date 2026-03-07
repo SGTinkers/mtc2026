@@ -35,6 +35,7 @@ function AdminsList() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
@@ -71,6 +72,10 @@ function AdminsList() {
       setPasswordError("New password must be at least 8 characters");
       return;
     }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
     setSavingPassword(true);
     try {
       const { error } = await authClient.changePassword({
@@ -84,6 +89,7 @@ function AdminsList() {
         setPasswordSuccess(true);
         setCurrentPassword("");
         setNewPassword("");
+        setConfirmPassword("");
         setTimeout(() => {
           setChangingPassword(false);
           setPasswordSuccess(false);
@@ -177,6 +183,15 @@ function AdminsList() {
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
                 {passwordError && (
                   <p className="text-sm text-destructive">{passwordError}</p>
                 )}
@@ -195,6 +210,7 @@ function AdminsList() {
                       setChangingPassword(false);
                       setCurrentPassword("");
                       setNewPassword("");
+                      setConfirmPassword("");
                       setPasswordError("");
                       setPasswordSuccess(false);
                     }}

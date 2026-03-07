@@ -33,7 +33,7 @@ function PaymentsList() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-0">
           {payments.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
               No payments recorded yet.

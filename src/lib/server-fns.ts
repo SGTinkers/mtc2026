@@ -255,11 +255,14 @@ export const getMemberDetail = createServerFn({ method: "GET" })
         .select()
         .from(dependants)
         .where(eq(dependants.subscriptionId, sub.id));
+    }
 
+    if (subs.length > 0) {
+      const allSubIds = subs.map(s => s.id);
       paymentHistory = await db
         .select()
         .from(payments)
-        .where(eq(payments.subscriptionId, sub.id))
+        .where(inArray(payments.subscriptionId, allSubIds))
         .orderBy(desc(payments.createdAt));
     }
 

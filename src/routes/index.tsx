@@ -410,6 +410,9 @@ function LandingPage() {
           <span className="text-center text-xs lg:text-sm text-white/30">
             Skim Pintar Monthly Giving Programme
           </span>
+          <Link to="/member/login" className="text-center text-xs lg:text-sm text-white/40 hover:text-white/70 transition-colors">
+            Manage my donation
+          </Link>
           <span className="text-center text-xs lg:text-sm text-white/30">
             © 2026 Masjid Ar-Raudhah. All rights reserved.
           </span>

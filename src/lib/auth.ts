@@ -17,9 +17,7 @@ export const auth = betterAuth({
     admin(),
     magicLink({
       sendMagicLink: async ({ email, url }) => {
-        if (process.env.NODE_ENV === "development") {
-          console.log(`\n[Magic Link] ${email}\n${url}\n`);
-        }
+        console.log(`[Magic Link] ${email} → ${url}`);
         await sendMagicLinkEmail(email, url);
       },
     }),

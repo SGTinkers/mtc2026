@@ -446,14 +446,14 @@ function LandingPage() {
           <img src="/logo.webp" alt="Masjid Ar-Raudhah" className="reveal-scale h-20 lg:h-28 2xl:h-36 w-auto" />
           <div className="flex flex-col items-center">
             <h2 className="reveal reveal-delay-1 text-center font-[family-name:var(--font-family-heading)] text-[28px] lg:text-4xl 2xl:text-5xl leading-[1.15] font-bold tracking-tight text-white">
-              Masjid Ar-Raudhah is counting
+              Masjid Ar-Raudhah thrives
             </h2>
             <h2 className="reveal reveal-delay-2 text-center font-[family-name:var(--font-family-heading)] text-[28px] lg:text-4xl 2xl:text-5xl leading-[1.15] font-bold tracking-tight text-gold">
-              on people like you.
+              thanks to people like you.
             </h2>
           </div>
           <p className="reveal reveal-delay-3 max-w-sm lg:max-w-md 2xl:max-w-lg text-center text-[15px] lg:text-lg 2xl:text-xl leading-[1.65] text-white/65">
-            Join hundreds of families who give a little every month, so
+            Join thousands of families who give a little every month, so
             your masjid never has to worry about keeping its doors open.
           </p>
           <Link

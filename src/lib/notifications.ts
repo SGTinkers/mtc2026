@@ -3,7 +3,7 @@ import { env } from "~/env.js";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-const FROM_EMAIL = "Skim Pintar <onboarding@resend.dev>";
+const FROM_EMAIL = "Skim Pintar <noreply@mtc2026.msociety.dev>";
 
 async function send(
   params: Parameters<typeof resend.emails.send>[0],

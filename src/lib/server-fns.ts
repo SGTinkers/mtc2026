@@ -14,6 +14,7 @@ import { eq, desc, sql, and, lt, count } from "drizzle-orm";
 import { auth } from "./auth.js";
 import { stripe } from "./stripe.js";
 import { sendWelcomeEmail, sendPaymentReceivedEmail } from "./notifications.js";
+import { env } from "~/env.js";
 
 // ─── Auth helpers ───
 
@@ -577,8 +578,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       metadata: {
         subscription_id: sub.id,
       },
-      success_url: `${process.env.BETTER_AUTH_URL}/member/subscription?success=1`,
-      cancel_url: `${process.env.BETTER_AUTH_URL}/member/subscription`,
+      success_url: `${env.BETTER_AUTH_URL}/member/subscription?success=1`,
+      cancel_url: `${env.BETTER_AUTH_URL}/member/subscription`,
     });
 
     return { url: checkoutSession.url };
@@ -601,7 +602,7 @@ export const createBillingPortalSession = createServerFn({
 
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: sub.subscriptions.stripeCustomerId,
-    return_url: `${process.env.BETTER_AUTH_URL}/member/subscription`,
+    return_url: `${env.BETTER_AUTH_URL}/member/subscription`,
   });
 
   return { url: portalSession.url };

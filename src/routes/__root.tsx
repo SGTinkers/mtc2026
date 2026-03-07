@@ -6,7 +6,9 @@ import {
   createRootRoute,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import appCss from "~/styles/app.css?url";
+
+// @ts-expect-error -- Vite ?url import not typed
+import appCss from "../styles/app.css?url";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +17,7 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Skim Pintar - Masjid Ar-Raudhah" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [{ rel: "stylesheet", href: appCss as string }],
   }),
   component: RootComponent,
 });

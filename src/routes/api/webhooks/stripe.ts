@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { env } from "~/env.js";
 import { stripe } from "~/lib/stripe.js";
 import { db } from "~/db/index.js";
 import {
@@ -27,7 +28,7 @@ async function handleWebhook(request: Request): Promise<Response> {
     event = stripe.webhooks.constructEvent(
       body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!,
+      env.STRIPE_WEBHOOK_SECRET,
     );
   } catch {
     return new Response("Webhook signature verification failed", {

@@ -43,6 +43,7 @@ function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
 
   useEffect(() => {
     if (!sessionId) return;
+    const sid = sessionId;
 
     let cancelled = false;
     const maxTime = Date.now() + 2 * 60 * 1000; // 2 minutes
@@ -51,7 +52,7 @@ function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
     async function poll() {
       while (!cancelled && Date.now() < maxTime) {
         try {
-          const info = await getCheckoutSubscriptionInfo({ data: { sessionId } });
+          const info = await getCheckoutSubscriptionInfo({ data: { sessionId: sid } });
           if (cancelled) return;
           if (info) {
             setSubInfo(info as SubInfo);

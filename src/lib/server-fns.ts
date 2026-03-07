@@ -694,7 +694,7 @@ export const addDependant = createServerFn({ method: "POST" })
         .select({ count: count() })
         .from(dependants)
         .where(eq(dependants.subscriptionId, sub.id));
-      if (existing[0].count >= sub.maxDependants) {
+      if (existing[0]!.count >= sub.maxDependants) {
         throw new Error("Maximum number of dependants reached");
       }
     }
@@ -1009,6 +1009,18 @@ export const searchUsersForAudit = createServerFn({ method: "GET" })
       .limit(20);
   });
 
+export type AuditRow = {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  oldValue: Record<string, string> | null;
+  newValue: Record<string, string> | null;
+  performedBy: string;
+  performerName: string | null;
+  createdAt: Date;
+};
+
 export const getAuditLogs = createServerFn({ method: "GET" })
   .inputValidator(
     (data: {
@@ -1030,11 +1042,11 @@ export const getAuditLogs = createServerFn({ method: "GET" })
     const conditions = [];
     if (data.entityType) {
       const types = data.entityType.split(",");
-      conditions.push(types.length === 1 ? eq(auditLog.entityType, types[0]) : inArray(auditLog.entityType, types));
+      conditions.push(types.length === 1 ? eq(auditLog.entityType, types[0]!) : inArray(auditLog.entityType, types));
     }
     if (data.action) {
       const actions = data.action.split(",");
-      conditions.push(actions.length === 1 ? eq(auditLog.action, actions[0]) : inArray(auditLog.action, actions));
+      conditions.push(actions.length === 1 ? eq(auditLog.action, actions[0]!) : inArray(auditLog.action, actions));
     }
     if (data.user) conditions.push(ilike(user.name, `%${data.user}%`));
     if (data.fromDate) conditions.push(gte(auditLog.createdAt, new Date(data.fromDate)));
@@ -1046,7 +1058,7 @@ export const getAuditLogs = createServerFn({ method: "GET" })
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const [rows, [{ total }]] = await Promise.all([
+    const [queryRows, totalResult] = await Promise.all([
       db
         .select({
           id: auditLog.id,
@@ -1071,6 +1083,8 @@ export const getAuditLogs = createServerFn({ method: "GET" })
         .leftJoin(user, eq(auditLog.performedBy, user.id))
         .where(whereClause),
     ]);
+    const total = totalResult[0]?.total ?? 0;
+    const rows = queryRows as AuditRow[];
 
     return { rows, total, page, pageSize };
   });

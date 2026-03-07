@@ -5,8 +5,19 @@ const resend = new Resend(env.RESEND_API_KEY);
 
 const FROM_EMAIL = "Skim Pintar <onboarding@resend.dev>";
 
+async function send(
+  params: Parameters<typeof resend.emails.send>[0],
+) {
+  const { data, error } = await resend.emails.send(params);
+  if (error) {
+    console.error("[Resend] Failed to send email:", error);
+    throw new Error(`Failed to send email: ${error.message}`);
+  }
+  return data;
+}
+
 export async function sendMagicLinkEmail(email: string, url: string) {
-  await resend.emails.send({
+  await send({
     from: FROM_EMAIL,
     to: email,
     subject: "Your Skim Pintar Login Link",
@@ -22,7 +33,7 @@ export async function sendMagicLinkEmail(email: string, url: string) {
 }
 
 export async function sendWelcomeEmail(email: string, name: string) {
-  await resend.emails.send({
+  await send({
     from: FROM_EMAIL,
     to: email,
     subject: "Welcome to Skim Pintar",
@@ -40,7 +51,7 @@ export async function sendPaymentReceivedEmail(
   method: string,
   periodMonth: string,
 ) {
-  await resend.emails.send({
+  await send({
     from: FROM_EMAIL,
     to: email,
     subject: "Payment Received - Skim Pintar",
@@ -61,7 +72,7 @@ export async function sendPaymentFailedEmail(
       ? "URGENT: This is the final attempt."
       : `This is attempt ${attemptNumber} of 3.`;
 
-  await resend.emails.send({
+  await send({
     from: FROM_EMAIL,
     to: email,
     subject: `Payment Failed - Action Required (Attempt ${attemptNumber})`,
@@ -77,7 +88,7 @@ export async function sendGracePeriodEmail(
   email: string,
   daysRemaining: number,
 ) {
-  await resend.emails.send({
+  await send({
     from: FROM_EMAIL,
     to: email,
     subject: "Grace Period Started - Skim Pintar",
@@ -90,7 +101,7 @@ export async function sendGracePeriodEmail(
 }
 
 export async function sendCoverageLapsedEmail(email: string) {
-  await resend.emails.send({
+  await send({
     from: FROM_EMAIL,
     to: email,
     subject: "Coverage Lapsed - Skim Pintar",
@@ -103,7 +114,7 @@ export async function sendCoverageLapsedEmail(email: string) {
 }
 
 export async function sendCoverageReactivatedEmail(email: string) {
-  await resend.emails.send({
+  await send({
     from: FROM_EMAIL,
     to: email,
     subject: "Coverage Reactivated - Skim Pintar",

@@ -63,7 +63,7 @@ function MembersList() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Amount</TableHead>
+                <TableHead>Monthly Contribution</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead />
               </TableRow>

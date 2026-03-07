@@ -210,64 +210,8 @@ function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Plan Breakdown */}
-        <Card className="lg:col-span-3 border border-border/60 shadow-sm bg-white">
-          <CardHeader className="px-6 pt-5 pb-0">
-            <CardTitle className="text-base font-semibold text-foreground">Membership Plans</CardTitle>
-            <CardDescription className="text-xs">Active subscription breakdown</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-center items-center pt-2 pb-6">
-            {stats.planBreakdown.length > 0 ? (
-              <>
-                <ChartContainer
-                  config={planChartConfig}
-                  className="mx-auto aspect-square max-h-[260px] w-full"
-                >
-                  <PieChart>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel className="text-sm" />} />
-                    <Pie
-                      data={planData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={65}
-                      outerRadius={95}
-                      paddingAngle={3}
-                      dataKey="value"
-                      strokeWidth={2}
-                      stroke="#fff"
-                    >
-                      {planData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-                <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
-                  {planData.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <div
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: item.fill }}
-                      />
-                      <span className="text-xs text-muted-foreground">{item.name}</span>
-                      <span className="text-xs font-semibold text-foreground">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="text-muted-foreground flex items-center justify-center h-full text-sm">
-                No active subscriptions
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom Row */}
-      <div className="grid gap-4 md:grid-cols-2">
         {/* Payment Methods */}
-        <Card className="border border-border/60 shadow-sm bg-white">
+        <Card className="lg:col-span-3 border border-border/60 shadow-sm bg-white">
           <CardHeader className="px-6 pt-5 pb-0">
             <CardTitle className="text-base font-semibold text-foreground">Payment Methods</CardTitle>
             <CardDescription className="text-xs">Distribution of payment methods</CardDescription>
@@ -277,7 +221,7 @@ function AdminDashboard() {
               <>
                 <ChartContainer
                   config={paymentChartConfig}
-                  className="mx-auto aspect-square max-h-[240px] w-full"
+                  className="mx-auto aspect-square max-h-[260px] w-full"
                 >
                   <PieChart>
                     <ChartTooltip content={<ChartTooltipContent hideLabel className="text-sm" />} />
@@ -285,8 +229,8 @@ function AdminDashboard() {
                       data={paymentData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
+                      innerRadius={65}
+                      outerRadius={95}
                       paddingAngle={3}
                       dataKey="value"
                       strokeWidth={2}
@@ -314,6 +258,62 @@ function AdminDashboard() {
             ) : (
               <div className="text-muted-foreground flex items-center justify-center h-full text-sm">
                 No payment data yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bottom Row */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Membership Plans */}
+        <Card className="border border-border/60 shadow-sm bg-white">
+          <CardHeader className="px-6 pt-5 pb-0">
+            <CardTitle className="text-base font-semibold text-foreground">Membership Plans</CardTitle>
+            <CardDescription className="text-xs">Active subscription breakdown</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center items-center pt-2 pb-6">
+            {stats.planBreakdown.length > 0 ? (
+              <>
+                <ChartContainer
+                  config={planChartConfig}
+                  className="mx-auto aspect-square max-h-[240px] w-full"
+                >
+                  <PieChart>
+                    <ChartTooltip content={<ChartTooltipContent hideLabel className="text-sm" />} />
+                    <Pie
+                      data={planData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={3}
+                      dataKey="value"
+                      strokeWidth={2}
+                      stroke="#fff"
+                    >
+                      {planData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+                <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
+                  {planData.map((item, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: item.fill }}
+                      />
+                      <span className="text-xs text-muted-foreground">{item.name}</span>
+                      <span className="text-xs font-semibold text-foreground">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-muted-foreground flex items-center justify-center h-full text-sm">
+                No active subscriptions
               </div>
             )}
           </CardContent>

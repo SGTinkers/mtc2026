@@ -1,47 +1,63 @@
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
 import { cn } from "~/lib/utils.js";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 
 interface ComboboxProps<T> {
-  options: T[];
+  onSearch: (query: string) => Promise<T[]>;
   value: T | null;
   onSelect: (option: T | null) => void;
   getOptionValue: (option: T) => string;
   getOptionLabel: (option: T) => string;
-  filterOption?: (option: T, query: string) => boolean;
   renderOption?: (option: T) => ReactNode;
   placeholder?: string;
-  name?: string;
+  debounceMs?: number;
 }
 
 export function Combobox<T>({
-  options,
+  onSearch,
   value,
   onSelect,
   getOptionValue,
   getOptionLabel,
-  filterOption,
   renderOption,
   placeholder = "Search...",
+  debounceMs = 300,
 }: ComboboxProps<T>) {
   const [query, setQuery] = useState("");
+  const [options, setOptions] = useState<T[]>([]);
   const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const filtered = query
-    ? options.filter((o) =>
-        filterOption
-          ? filterOption(o, query)
-          : getOptionLabel(o).toLowerCase().includes(query.toLowerCase()),
-      )
-    : options;
+  const doSearch = useCallback(
+    (q: string) => {
+      clearTimeout(debounceRef.current);
+      if (!q.trim()) {
+        setOptions([]);
+        setOpen(false);
+        return;
+      }
+      setSearching(true);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const results = await onSearch(q);
+          setOptions(results);
+          setHighlightIndex(0);
+          setOpen(true);
+        } finally {
+          setSearching(false);
+        }
+      }, debounceMs);
+    },
+    [onSearch, debounceMs],
+  );
 
   useEffect(() => {
-    setHighlightIndex(0);
-  }, [query]);
+    return () => clearTimeout(debounceRef.current);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -66,7 +82,7 @@ export function Combobox<T>({
   function handleKeyDown(e: React.KeyboardEvent) {
     if (!open) {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        setOpen(true);
+        if (options.length > 0) setOpen(true);
         e.preventDefault();
       }
       return;
@@ -75,7 +91,7 @@ export function Combobox<T>({
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        setHighlightIndex((i) => Math.min(i + 1, filtered.length - 1));
+        setHighlightIndex((i) => Math.min(i + 1, options.length - 1));
         break;
       case "ArrowUp":
         e.preventDefault();
@@ -83,8 +99,8 @@ export function Combobox<T>({
         break;
       case "Enter":
         e.preventDefault();
-        if (filtered[highlightIndex]) {
-          selectOption(filtered[highlightIndex]);
+        if (options[highlightIndex]) {
+          selectOption(options[highlightIndex]);
         }
         break;
       case "Escape":
@@ -100,24 +116,27 @@ export function Combobox<T>({
     setOpen(false);
   }
 
-  function handleFocus() {
-    setOpen(true);
-  }
-
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setQuery(e.target.value);
-    setOpen(true);
-    if (!e.target.value) {
+    const val = e.target.value;
+    setQuery(val);
+    if (!val) {
       onSelect(null);
+      setOptions([]);
+      setOpen(false);
+    } else {
+      doSearch(val);
     }
   }
 
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        {searching ? (
+          <Loader2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+        ) : (
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        )}
         <input
-          ref={inputRef}
           type="text"
           className={cn(
             "flex h-10 w-full rounded-md border border-input bg-white pl-10 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -125,7 +144,6 @@ export function Combobox<T>({
           placeholder={placeholder}
           value={query}
           onChange={handleChange}
-          onFocus={handleFocus}
           onKeyDown={handleKeyDown}
           role="combobox"
           aria-expanded={open}
@@ -140,17 +158,19 @@ export function Combobox<T>({
           className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-white py-1 shadow-md"
           role="listbox"
         >
-          {filtered.length === 0 ? (
+          {options.length === 0 ? (
             <li className="px-3 py-2 text-sm text-muted-foreground">
               No results found
             </li>
           ) : (
-            filtered.map((option, i) => (
+            options.map((option, i) => (
               <li
                 key={getOptionValue(option)}
                 role="option"
                 aria-selected={
-                  value ? getOptionValue(option) === getOptionValue(value) : false
+                  value
+                    ? getOptionValue(option) === getOptionValue(value)
+                    : false
                 }
                 className={cn(
                   "cursor-pointer px-3 py-2 text-sm",

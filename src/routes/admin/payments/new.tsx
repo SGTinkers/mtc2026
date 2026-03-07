@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
-import { recordPayment, getMembers } from "~/lib/server-fns.js";
+import { useState, useCallback } from "react";
+import { recordPayment, searchMembersForPayment } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
 import { Label } from "~/components/ui/label.js";
@@ -9,19 +9,22 @@ import { Combobox } from "~/components/ui/combobox.js";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card.js";
 
 export const Route = createFileRoute("/admin/payments/new")({
-  loader: () => getMembers(),
   component: RecordPayment,
 });
 
-type Member = Awaited<ReturnType<typeof getMembers>>[number];
+type Member = Awaited<ReturnType<typeof searchMembersForPayment>>[number];
 
 function RecordPayment() {
-  const members = Route.useLoaderData();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [amount, setAmount] = useState("");
+
+  const handleSearch = useCallback(
+    (query: string) => searchMembersForPayment({ data: query }),
+    [],
+  );
 
   function handleMemberSelect(member: Member | null) {
     setSelectedMember(member);
@@ -79,7 +82,7 @@ function RecordPayment() {
             <div className="space-y-2">
               <Label>Member *</Label>
               <Combobox
-                options={members}
+                onSearch={handleSearch}
                 value={selectedMember}
                 onSelect={handleMemberSelect}
                 getOptionValue={(m) => m.id}
@@ -88,13 +91,6 @@ function RecordPayment() {
                     ? `${m.userName} (${m.userEmail})`
                     : m.userEmail ?? ""
                 }
-                filterOption={(m, q) => {
-                  const lower = q.toLowerCase();
-                  return (
-                    (m.userName?.toLowerCase().includes(lower) ?? false) ||
-                    (m.userEmail?.toLowerCase().includes(lower) ?? false)
-                  );
-                }}
                 renderOption={(m) => (
                   <div>
                     <div className="font-medium">{m.userName}</div>

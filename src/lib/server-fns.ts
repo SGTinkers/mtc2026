@@ -16,7 +16,7 @@ import { auth } from "./auth.js";
 import { stripe } from "./stripe.js";
 import { sendWelcomeEmail, sendPaymentReceivedEmail } from "./notifications.js";
 import { env } from "~/env.js";
-import { queryMembersWithLatestSub } from "./members.repo.js";
+import { queryMembersWithLatestSub, searchMembers as searchMembersRepo } from "./members.repo.js";
 
 // ─── Auth helpers ───
 
@@ -147,6 +147,13 @@ export const getMembers = createServerFn({ method: "GET" }).handler(
     return queryMembersWithLatestSub();
   },
 );
+
+export const searchMembersForPayment = createServerFn({ method: "GET" })
+  .inputValidator((query: string) => query)
+  .handler(async ({ data: query }) => {
+    await requireAdminSession();
+    return searchMembersRepo(query);
+  });
 
 export const getMemberDetail = createServerFn({ method: "GET" })
   .inputValidator((id: string) => id)

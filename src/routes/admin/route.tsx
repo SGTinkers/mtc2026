@@ -36,8 +36,13 @@ function AdminLayout() {
     <div className="flex min-h-screen">
       <aside className="flex w-64 flex-col border-r border-border bg-card">
         <div className="border-b border-border p-6">
-          <h1 className="text-lg font-bold text-primary">Skim Pintar</h1>
-          <p className="text-xs text-muted-foreground">Admin Portal</p>
+          <div className="flex items-center gap-3">
+            <img src="/logo.webp" alt="Masjid Ar-Raudhah" className="h-10 w-auto" />
+            <div>
+              <h1 className="text-lg font-bold text-primary">Skim Pintar</h1>
+              <p className="text-xs text-muted-foreground">Admin Portal</p>
+            </div>
+          </div>
         </div>
         <nav className="flex-1 space-y-1 p-4">
           {navItems.map((item) => (

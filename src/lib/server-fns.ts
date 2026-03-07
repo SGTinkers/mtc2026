@@ -11,7 +11,7 @@ import {
   user,
   auditLog,
 } from "~/db/schema.js";
-import { eq, desc, sql, and, count } from "drizzle-orm";
+import { eq, desc, sql, and, or, count, gte, lte, ilike, inArray } from "drizzle-orm";
 import { auth } from "./auth.js";
 import { stripe } from "./stripe.js";
 import { sendWelcomeEmail, sendPaymentReceivedEmail } from "./notifications.js";
@@ -989,13 +989,62 @@ export const cancelSubscription = createServerFn({ method: "POST" })
 
 // ─── Audit logs ───
 
+export const searchUsersForAudit = createServerFn({ method: "GET" })
+  .inputValidator((query: string) => query)
+  .handler(async ({ data: query }) => {
+    await requireAdminSession();
+    const tokens = query.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return [];
+
+    const conditions = tokens.map((token) => {
+      const pattern = `%${token}%`;
+      return or(ilike(user.name, pattern), ilike(user.email, pattern))!;
+    });
+
+    return db
+      .select({ id: user.id, name: user.name, email: user.email })
+      .from(user)
+      .where(and(...conditions))
+      .orderBy(user.name)
+      .limit(20);
+  });
+
 export const getAuditLogs = createServerFn({ method: "GET" })
-  .inputValidator((data: { page?: number; pageSize?: number }) => data)
+  .inputValidator(
+    (data: {
+      page?: number;
+      pageSize?: number;
+      entityType?: string; // comma-separated
+      action?: string; // comma-separated
+      user?: string;
+      fromDate?: string;
+      toDate?: string;
+    }) => data,
+  )
   .handler(async ({ data }) => {
     await requireAdminSession();
     const page = data.page ?? 1;
     const pageSize = data.pageSize ?? 20;
     const offset = (page - 1) * pageSize;
+
+    const conditions = [];
+    if (data.entityType) {
+      const types = data.entityType.split(",");
+      conditions.push(types.length === 1 ? eq(auditLog.entityType, types[0]) : inArray(auditLog.entityType, types));
+    }
+    if (data.action) {
+      const actions = data.action.split(",");
+      conditions.push(actions.length === 1 ? eq(auditLog.action, actions[0]) : inArray(auditLog.action, actions));
+    }
+    if (data.user) conditions.push(ilike(user.name, `%${data.user}%`));
+    if (data.fromDate) conditions.push(gte(auditLog.createdAt, new Date(data.fromDate)));
+    if (data.toDate) {
+      const end = new Date(data.toDate);
+      end.setHours(23, 59, 59, 999);
+      conditions.push(lte(auditLog.createdAt, end));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const [rows, [{ total }]] = await Promise.all([
       db
@@ -1012,10 +1061,15 @@ export const getAuditLogs = createServerFn({ method: "GET" })
         })
         .from(auditLog)
         .leftJoin(user, eq(auditLog.performedBy, user.id))
+        .where(whereClause)
         .orderBy(desc(auditLog.createdAt))
         .limit(pageSize)
         .offset(offset),
-      db.select({ total: count() }).from(auditLog),
+      db
+        .select({ total: count() })
+        .from(auditLog)
+        .leftJoin(user, eq(auditLog.performedBy, user.id))
+        .where(whereClause),
     ]);
 
     return { rows, total, page, pageSize };

@@ -22,6 +22,7 @@ import {
   Calendar,
   HandHeart,
 } from "lucide-react";
+import { DatePicker } from "~/components/ui/date-picker.js";
 
 export const Route = createFileRoute("/member/")({
   loader: async () => {
@@ -629,6 +630,23 @@ function FormField({
   required?: boolean;
   inputMode?: "numeric" | "tel" | "text";
 }) {
+  if (type === "date") {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-gd/70">
+          {label}
+          {required && <span className="text-red-400"> *</span>}
+        </label>
+        <DatePicker
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder ?? "Pick a date"}
+          className="h-auto rounded-xl border-gray-200 px-4 py-3 text-gd hover:bg-white focus-visible:border-g1 focus-visible:ring-g1/10"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-semibold text-gd/70">

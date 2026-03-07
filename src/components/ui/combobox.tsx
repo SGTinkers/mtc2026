@@ -23,7 +23,9 @@ export function Combobox<T>({
   placeholder = "Search...",
   debounceMs = 300,
 }: ComboboxProps<T>) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() =>
+    value ? getOptionLabel(value) : "",
+  );
   const [options, setOptions] = useState<T[]>([]);
   const [open, setOpen] = useState(false);
   const [searching, setSearching] = useState(false);

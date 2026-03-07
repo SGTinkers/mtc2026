@@ -6,6 +6,7 @@ import {
   removeDependant,
 } from "~/lib/server-fns.js";
 import { Plus, X, Users, Heart, UserPlus, Shield } from "lucide-react";
+import { DatePicker } from "~/components/ui/date-picker.js";
 
 export const Route = createFileRoute("/member/dependants")({
   loader: () => getMemberDependants(),
@@ -147,10 +148,10 @@ function DependantsPage() {
               <label className="text-xs font-semibold text-gd/70">
                 Date of Birth
               </label>
-              <input
+              <DatePicker
                 name="dob"
-                type="date"
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gd outline-none transition-all focus:border-g1 focus:ring-2 focus:ring-g1/10"
+                placeholder="Pick a date"
+                className="h-auto rounded-xl border-gray-200 px-4 py-3 text-gd hover:bg-white focus-visible:border-g1 focus-visible:ring-g1/10"
               />
             </div>
 

@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useCallback } from "react";
 import { recordPayment, searchMembersForPayment } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
@@ -8,30 +8,89 @@ import { Select } from "~/components/ui/select.js";
 import { Combobox } from "~/components/ui/combobox.js";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card.js";
 
+type PaymentSearch = {
+  memberId?: string;
+  memberName?: string;
+  memberEmail?: string;
+  subscriptionId?: string;
+  monthlyAmount?: number;
+  amount?: string;
+  method?: string;
+  periodMonth?: string;
+  reference?: string;
+};
+
 export const Route = createFileRoute("/admin/payments/new")({
+  validateSearch: (search: Record<string, unknown>): PaymentSearch => ({
+    memberId: typeof search.memberId === "string" ? search.memberId : undefined,
+    memberName: typeof search.memberName === "string" ? search.memberName : undefined,
+    memberEmail: typeof search.memberEmail === "string" ? search.memberEmail : undefined,
+    subscriptionId: typeof search.subscriptionId === "string" ? search.subscriptionId : undefined,
+    monthlyAmount: typeof search.monthlyAmount === "number" ? search.monthlyAmount : undefined,
+    amount: typeof search.amount === "string" ? search.amount : undefined,
+    method: typeof search.method === "string" ? search.method : undefined,
+    periodMonth: typeof search.periodMonth === "string" ? search.periodMonth : undefined,
+    reference: typeof search.reference === "string" ? search.reference : undefined,
+  }),
   component: RecordPayment,
 });
 
 type Member = Awaited<ReturnType<typeof searchMembersForPayment>>[number];
 
 function RecordPayment() {
-  const router = useRouter();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [amount, setAmount] = useState("");
 
-  const handleSearch = useCallback(
+  const updateSearch = useCallback(
+    (updates: Partial<PaymentSearch>) =>
+      navigate({
+        to: "/admin/payments/new",
+        search: (prev) => ({ ...prev, ...updates }),
+        replace: true,
+      }),
+    [navigate],
+  );
+
+  const selectedMember: Member | null =
+    search.memberId && search.subscriptionId
+      ? ({
+          id: search.memberId,
+          userName: search.memberName ?? null,
+          userEmail: search.memberEmail ?? null,
+          subscriptionId: search.subscriptionId,
+          monthlyAmount: search.monthlyAmount ? String(search.monthlyAmount) : null,
+        } as Member)
+      : null;
+
+  const handleSearchMembers = useCallback(
     (query: string) => searchMembersForPayment({ data: query }),
     [],
   );
 
   function handleMemberSelect(member: Member | null) {
-    setSelectedMember(member);
-    if (member?.monthlyAmount) {
-      setAmount(Number(member.monthlyAmount).toFixed(2));
+    if (member) {
+      const amt = member.monthlyAmount
+        ? Number(member.monthlyAmount).toFixed(2)
+        : undefined;
+      updateSearch({
+        memberId: member.id,
+        memberName: member.userName ?? undefined,
+        memberEmail: member.userEmail ?? undefined,
+        subscriptionId: member.subscriptionId ?? undefined,
+        monthlyAmount: member.monthlyAmount ? Number(member.monthlyAmount) : undefined,
+        amount: amt,
+      });
     } else {
-      setAmount("");
+      updateSearch({
+        memberId: undefined,
+        memberName: undefined,
+        memberEmail: undefined,
+        subscriptionId: undefined,
+        monthlyAmount: undefined,
+        amount: undefined,
+      });
     }
   }
 
@@ -40,19 +99,17 @@ function RecordPayment() {
     setError("");
     setLoading(true);
 
-    const form = new FormData(e.currentTarget);
-
     try {
       await recordPayment({
         data: {
-          subscriptionId: form.get("subscriptionId") as string,
-          amount: form.get("amount") as string,
-          method: form.get("method") as "giro" | "cash" | "bank_transfer" | "paynow",
-          reference: (form.get("reference") as string) || undefined,
-          periodMonth: (form.get("periodMonth") as string) || undefined,
+          subscriptionId: search.subscriptionId!,
+          amount: search.amount!,
+          method: search.method as "giro" | "cash" | "bank_transfer" | "paynow",
+          reference: search.reference || undefined,
+          periodMonth: search.periodMonth || undefined,
         },
       });
-      router.navigate({ to: "/admin/payments" });
+      navigate({ to: "/admin/payments" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to record payment");
     } finally {
@@ -82,7 +139,7 @@ function RecordPayment() {
             <div className="space-y-2">
               <Label>Member *</Label>
               <Combobox
-                onSearch={handleSearch}
+                onSearch={handleSearchMembers}
                 value={selectedMember}
                 onSelect={handleMemberSelect}
                 getOptionValue={(m) => m.id}
@@ -104,12 +161,6 @@ function RecordPayment() {
                 )}
                 placeholder="Search by name or email..."
               />
-              <input
-                type="hidden"
-                name="subscriptionId"
-                value={selectedMember?.subscriptionId ?? ""}
-                required
-              />
               {selectedMember && !selectedMember.subscriptionId && (
                 <p className="text-sm text-amber-600">
                   This member has no active subscription. A payment cannot be recorded.
@@ -122,18 +173,22 @@ function RecordPayment() {
                 <Label htmlFor="amount">Amount ($) *</Label>
                 <Input
                   id="amount"
-                  name="amount"
                   type="number"
                   step="0.01"
                   min="0"
                   required
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  value={search.amount ?? ""}
+                  onChange={(e) => updateSearch({ amount: e.target.value || undefined })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="method">Payment Method *</Label>
-                <Select id="method" name="method" required>
+                <Select
+                  id="method"
+                  required
+                  value={search.method ?? ""}
+                  onChange={(e) => updateSearch({ method: e.target.value || undefined })}
+                >
                   <option value="">Select method</option>
                   <option value="cash">Cash</option>
                   <option value="giro">GIRO</option>
@@ -146,25 +201,34 @@ function RecordPayment() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="periodMonth">Period Month</Label>
-                <Input id="periodMonth" name="periodMonth" type="month" />
+                <Input
+                  id="periodMonth"
+                  type="month"
+                  value={search.periodMonth ?? ""}
+                  onChange={(e) => updateSearch({ periodMonth: e.target.value || undefined })}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="reference">Reference / Receipt No.</Label>
-                <Input id="reference" name="reference" />
+                <Input
+                  id="reference"
+                  value={search.reference ?? ""}
+                  onChange={(e) => updateSearch({ reference: e.target.value || undefined })}
+                />
               </div>
             </div>
 
             <div className="flex gap-3 pt-4">
               <Button
                 type="submit"
-                disabled={loading || (!!selectedMember && !selectedMember.subscriptionId)}
+                disabled={loading || !search.subscriptionId || !search.amount || !search.method}
               >
                 {loading ? "Recording..." : "Record Payment"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.navigate({ to: "/admin/payments" })}
+                onClick={() => navigate({ to: "/admin/payments" })}
               >
                 Cancel
               </Button>

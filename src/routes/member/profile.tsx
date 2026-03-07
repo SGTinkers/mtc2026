@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { getMemberDashboard, updateMemberProfile } from "~/lib/server-fns.js";
 import { UserCircle, Check, Pencil } from "lucide-react";
+import { DatePicker } from "~/components/ui/date-picker.js";
 
 export const Route = createFileRoute("/member/profile")({
   loader: () => getMemberDashboard(),
@@ -177,6 +178,20 @@ function ProfileField({
   placeholder?: string;
   inputMode?: "numeric" | "tel" | "text";
 }) {
+  if (type === "date") {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-gd/70">{label}</label>
+        <DatePicker
+          name={name}
+          defaultValue={defaultValue}
+          placeholder={placeholder ?? "Pick a date"}
+          className="h-auto rounded-xl border-gray-200 px-4 py-3 text-gd hover:bg-white focus-visible:border-g1 focus-visible:ring-g1/10"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={name} className="text-xs font-semibold text-gd/70">

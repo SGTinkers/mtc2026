@@ -9,6 +9,7 @@
         "@tanstack/react-router": "^1.166.2",
         "@tanstack/react-router-devtools": "^1.166.2",
         "@tanstack/react-start": "^1.166.2",
+        "@tanstack/zod-adapter": "^1.166.2",
         "better-auth": "^1.5.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -25,6 +26,7 @@
         "tailwindcss": "^4.2.1",
         "vinxi": "^0.5.11",
         "vite-tsconfig-paths": "^6.1.1",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -555,6 +557,8 @@
     "@tanstack/store": ["@tanstack/store@0.9.1", "", {}, "sha512-+qcNkOy0N1qSGsP7omVCW0SDrXtaDcycPqBDE726yryiA5eTDFpjBReaYjghVJwNf1pcPMyzIwTGlYjCSQR0Fg=="],
 
     "@tanstack/virtual-file-routes": ["@tanstack/virtual-file-routes@1.161.4", "", {}, "sha512-42WoRePf8v690qG8yGRe/YOh+oHni9vUaUUfoqlS91U2scd3a5rkLtVsc6b7z60w3RogH0I00vdrC5AaeiZ18w=="],
+
+    "@tanstack/zod-adapter": ["@tanstack/zod-adapter@1.166.2", "", { "peerDependencies": { "@tanstack/react-router": ">=1.43.2", "zod": "^3.23.8" } }, "sha512-Y+i8emDGJ7dhgazagzECeoG6EO3kFkgNOYqUXuimM1qg/luYs225bb4SbrbLiusPWr3DFEdSmW8wkLDV+kpzLA=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 

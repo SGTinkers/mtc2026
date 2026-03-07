@@ -1,9 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, Check, Users, Shield } from "lucide-react";
+import { ArrowRight, Check, Users, Shield, CheckCircle } from "lucide-react";
+import { createDonateCheckout } from "~/lib/server-fns.js";
+import { zodValidator } from "@tanstack/zod-adapter";
+import { z } from "zod";
+
+const donateSearchSchema = z.object({
+  success: z.boolean().optional().catch(undefined),
+});
 
 export const Route = createFileRoute("/donate")({
   component: DonatePage,
+  validateSearch: zodValidator({ schema: donateSearchSchema, input: "output" }),
 });
 
 const PRESET_AMOUNTS = [5, 10, 20, 50];
@@ -35,10 +43,12 @@ const PINTAR_PLUS_PREVIEW_PERKS = [
 ];
 
 function DonatePage() {
+  const { success } = Route.useSearch();
   const [amount, setAmount] = useState(20);
   const [customAmount, setCustomAmount] = useState("");
   const [isCustom, setIsCustom] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const effectiveAmount = isCustom ? Number(customAmount) || 0 : amount;
   const isPintarPlus = effectiveAmount >= 20;
@@ -56,6 +66,47 @@ function DonatePage() {
     setCustomAmount(val);
     setIsCustom(true);
   };
+
+  const handleCheckout = async () => {
+    if (!isPintar || isLoading) return;
+    setIsLoading(true);
+    try {
+      const result = await createDonateCheckout({
+        data: { monthlyAmount: effectiveAmount },
+      });
+      if (result.url) {
+        window.location.href = result.url;
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setIsLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-cream font-[family-name:var(--font-family-body)] flex flex-col items-center justify-center px-6">
+        <div className="flex flex-col items-center gap-6 max-w-md text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-g1/10">
+            <CheckCircle size={40} className="text-g1" />
+          </div>
+          <h1 className="font-[family-name:var(--font-family-heading)] text-2xl lg:text-3xl font-bold text-gd">
+            Welcome to Skim Pintar!
+          </h1>
+          <p className="text-base text-txt2 leading-relaxed">
+            Your subscription is active. Check your email for a login link to access your member portal.
+          </p>
+          <Link
+            to="/"
+            className="flex items-center gap-2 rounded-full bg-gold px-8 py-3 font-bold text-gdeep hover:brightness-105 transition-all"
+          >
+            Back to Homepage
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cream font-[family-name:var(--font-family-body)]">
@@ -312,19 +363,22 @@ function DonatePage() {
 
           {/* CTA */}
           <div className="flex flex-col items-center gap-3 pt-2">
-            <Link
-              to="/member/login"
+            <button
+              onClick={handleCheckout}
+              disabled={!isPintar || isLoading}
               className={`flex w-full items-center justify-center gap-2 rounded-full py-4 lg:py-5 font-bold lg:text-lg transition-all ${
                 isPintar
                   ? "bg-gold text-gdeep hover:brightness-105"
-                  : "bg-gray-300 text-gray-500 pointer-events-none"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
-              {isPintar
-                ? `Continue with $${effectiveAmount}/mo`
-                : "Select at least $5/mo"}
-              {isPintar && <ArrowRight size={18} />}
-            </Link>
+              {isLoading
+                ? "Redirecting to checkout…"
+                : isPintar
+                  ? `Continue with $${effectiveAmount}/mo`
+                  : "Select at least $5/mo"}
+              {isPintar && !isLoading && <ArrowRight size={18} />}
+            </button>
             <p className="text-center text-xs text-txt3">
               Secure payment via Stripe · Cancel anytime
             </p>

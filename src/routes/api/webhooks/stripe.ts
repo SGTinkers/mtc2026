@@ -7,12 +7,16 @@ import {
   payments,
   members,
   user,
+  plans,
+  auditLog,
 } from "~/db/schema.js";
 import { eq } from "drizzle-orm";
 import {
   sendPaymentReceivedEmail,
   sendPaymentFailedEmail,
+  sendWelcomeEmail,
 } from "~/lib/notifications.js";
+import { auth } from "~/lib/auth.js";
 import type Stripe from "stripe";
 
 async function handleWebhook(request: Request): Promise<Response> {
@@ -39,23 +43,131 @@ async function handleWebhook(request: Request): Promise<Response> {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      const subId = session.metadata?.subscription_id;
-      if (subId) {
-        const today = new Date();
-        const nextMonth = new Date(today);
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-        await db
-          .update(subscriptions)
-          .set({
+      if (session.metadata?.source === "donate") {
+        // Donate flow: create user + member + subscription
+        const email =
+          session.customer_details?.email ?? session.customer_email;
+        const name =
+          session.customer_details?.name ?? email?.split("@")[0] ?? "Member";
+        const planId = session.metadata.plan_id;
+        const monthlyAmount = session.metadata.monthly_amount;
+
+        console.log("[Webhook] Donate checkout completed", { email, name, planId, monthlyAmount });
+
+        if (!email || !planId || !monthlyAmount) {
+          console.error("[Webhook] Missing required fields", { email, planId, monthlyAmount });
+          break;
+        }
+
+        try {
+          // Check if user already exists
+          const [existingUser] = await db
+            .select()
+            .from(user)
+            .where(eq(user.email, email));
+
+          let userId: string;
+
+          if (existingUser) {
+            console.log("[Webhook] User already exists", existingUser.id);
+            userId = existingUser.id;
+          } else {
+            const newUser = await auth.api.signUpEmail({
+              body: { name, email, password: crypto.randomUUID() },
+            });
+            if (!newUser?.user) {
+              console.error("[Webhook] Failed to create user");
+              break;
+            }
+            console.log("[Webhook] Created user", newUser.user.id);
+            userId = newUser.user.id;
+          }
+
+          // Check if already a member
+          const [existingMember] = await db
+            .select()
+            .from(members)
+            .where(eq(members.userId, userId));
+
+          const memberId = existingMember
+            ? existingMember.id
+            : (
+                await db
+                  .insert(members)
+                  .values({ userId, createdBy: null })
+                  .returning()
+              )[0]!.id;
+
+          console.log("[Webhook] Member ID", memberId);
+
+          // Create subscription
+          const today = new Date().toISOString().split("T")[0]!;
+          const nextMonth = new Date();
+          nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+          await db.insert(subscriptions).values({
+            memberId,
+            planId,
+            monthlyAmount,
             status: "active",
+            paymentMethod: "stripe",
             stripeCustomerId: session.customer as string,
             stripeSubscriptionId: session.subscription as string,
-            paymentMethod: "stripe",
+            coverageStart: today,
             coverageUntil: nextMonth.toISOString().split("T")[0]!,
-            updatedAt: new Date(),
-          })
-          .where(eq(subscriptions.id, subId));
+          });
+
+          console.log("[Webhook] Subscription created");
+
+          // Send welcome email + magic link
+          try {
+            await sendWelcomeEmail(email, name);
+            console.log("[Webhook] Welcome email sent");
+          } catch (e) {
+            console.error("[Webhook] Failed to send welcome email", e);
+          }
+          try {
+            await auth.api.signInMagicLink({
+              body: { email },
+              headers: new Headers(),
+            });
+            console.log("[Webhook] Magic link sent");
+          } catch (e) {
+            console.error("[Webhook] Failed to send magic link", e);
+          }
+
+          // Audit log
+          await db.insert(auditLog).values({
+            entityType: "member",
+            entityId: memberId,
+            action: "self_registered",
+            newValue: { name, email, planId, source: "stripe_donate" },
+            performedBy: userId,
+          });
+        } catch (e) {
+          console.error("[Webhook] Donate flow error", e);
+        }
+      } else {
+        // Existing flow: update subscription for already-registered member
+        const subId = session.metadata?.subscription_id;
+        if (subId) {
+          const today = new Date();
+          const nextMonth = new Date(today);
+          nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+          await db
+            .update(subscriptions)
+            .set({
+              status: "active",
+              stripeCustomerId: session.customer as string,
+              stripeSubscriptionId: session.subscription as string,
+              paymentMethod: "stripe",
+              coverageUntil: nextMonth.toISOString().split("T")[0]!,
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.id, subId));
+        }
       }
       break;
     }

@@ -537,6 +537,44 @@ export const updateMemberProfile = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+// ─── Donate checkout (no auth required) ───
+
+export const createDonateCheckout = createServerFn({ method: "POST" })
+  .inputValidator((data: { monthlyAmount: number }) => data)
+  .handler(async ({ data }) => {
+    const planSlug = data.monthlyAmount >= 20 ? "pintar_plus" : "pintar";
+    const [plan] = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.slug, planSlug));
+
+    if (!plan) throw new Error("Plan not found");
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [
+        {
+          price_data: {
+            currency: "sgd",
+            product_data: { name: `Skim Pintar – ${plan.name}` },
+            unit_amount: data.monthlyAmount * 100,
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        source: "donate",
+        plan_id: plan.id,
+        monthly_amount: String(data.monthlyAmount),
+      },
+      success_url: `${env.BETTER_AUTH_URL}/donate?success=true`,
+      cancel_url: `${env.BETTER_AUTH_URL}/donate`,
+    });
+
+    return { url: checkoutSession.url };
+  });
+
 // ─── Stripe checkout ───
 
 export const createCheckoutSession = createServerFn({ method: "POST" })

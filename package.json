@@ -13,9 +13,11 @@
     "db:seed": "bun run src/db/seed.ts",
     "db:create-admin": "bun run src/db/create-admin.ts",
     "lint": "oxlint src/",
-    "type-check": "tsgo --noEmit"
+    "type-check": "tsgo --noEmit",
+    "email-dev": "email dev --dir src/emails --port 4000"
   },
   "devDependencies": {
+    "@react-email/preview-server": "5.2.9",
     "@types/bun": "latest",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -23,6 +25,7 @@
     "@vitejs/plugin-react": "^5.1.4",
     "drizzle-kit": "^0.31.9",
     "oxlint": "^1.51.0",
+    "react-email": "^5.2.9",
     "vite": "^7.3.1"
   },
   "peerDependencies": {

@@ -8,7 +8,7 @@ import {
 } from "./layout.js";
 
 export default function GracePeriodEmail({
-  daysRemaining,
+  daysRemaining = 10,
 }: {
   daysRemaining: number;
 }) {

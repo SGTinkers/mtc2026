@@ -17,6 +17,10 @@ interface DatePickerProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  /** Use dropdown month/year navigation — ideal for birth dates */
+  captionLayout?: "dropdown" | "dropdown-months" | "dropdown-years" | "label";
+  fromYear?: number;
+  toYear?: number;
 }
 
 function DatePicker({
@@ -27,6 +31,9 @@ function DatePicker({
   placeholder = "Pick a date",
   className,
   disabled,
+  captionLayout,
+  fromYear,
+  toYear,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
@@ -64,12 +71,15 @@ function DatePicker({
             : placeholder}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto overflow-hidden p-0" align="start">
         <Calendar
           mode="single"
           selected={selectedDate}
           onSelect={handleSelect}
           defaultMonth={selectedDate}
+          captionLayout={captionLayout}
+          {...(fromYear && { startMonth: new Date(fromYear, 0) })}
+          {...(toYear && { endMonth: new Date(toYear, 11) })}
         />
       </PopoverContent>
     </Popover>

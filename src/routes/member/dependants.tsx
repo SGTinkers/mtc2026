@@ -22,7 +22,7 @@ const relationshipLabels: Record<string, string> = {
 };
 
 function DependantsPage() {
-  const { dependants: deps, canAdd, subscriptionId } = Route.useLoaderData();
+  const { dependants: deps, canAdd, memberId } = Route.useLoaderData();
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ function DependantsPage() {
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!subscriptionId) return;
+    if (!memberId) return;
     setError("");
     setLoading(true);
 
@@ -40,7 +40,7 @@ function DependantsPage() {
     try {
       await addDependant({
         data: {
-          subscriptionId,
+          memberId,
           name: form.get("name") as string,
           dob: (form.get("dob") as string) || undefined,
           relationship: form.get("relationship") as
@@ -87,7 +87,7 @@ function DependantsPage() {
       </div>
 
       {/* No subscription */}
-      {!subscriptionId && (
+      {!memberId && (
         <EmptyState
           icon={<Shield className="h-8 w-8 text-txt3" />}
           title="No active subscription"
@@ -96,7 +96,7 @@ function DependantsPage() {
       )}
 
       {/* Plan doesn't support dependants */}
-      {subscriptionId && !canAdd && deps.length === 0 && (
+      {memberId && !canAdd && deps.length === 0 && (
         <EmptyState
           icon={<Users className="h-8 w-8 text-txt3" />}
           title="Family coverage not included"
@@ -105,7 +105,7 @@ function DependantsPage() {
       )}
 
       {/* Can add but no deps yet */}
-      {subscriptionId && canAdd && deps.length === 0 && !showForm && (
+      {memberId && canAdd && deps.length === 0 && !showForm && (
         <button
           onClick={() => setShowForm(true)}
           className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white/50 py-10 cursor-pointer transition-all hover:border-g1/40"
@@ -152,6 +152,9 @@ function DependantsPage() {
                 name="dob"
                 placeholder="Pick a date"
                 className="h-auto rounded-xl border-gray-200 px-4 py-3 text-gd hover:bg-white focus-visible:border-g1 focus-visible:ring-g1/10"
+                captionLayout="dropdown"
+                fromYear={1930}
+                toYear={new Date().getFullYear()}
               />
             </div>
 

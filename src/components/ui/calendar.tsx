@@ -1,3 +1,4 @@
+import { type ComponentProps } from "react";
 import { DayPicker, type DayPickerProps } from "react-day-picker";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "~/lib/utils.js";
@@ -12,11 +13,15 @@ function Calendar({ className, classNames, ...props }: DayPickerProps) {
         month_caption:
           "flex justify-center pt-1 relative items-center w-full",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1",
-        button_previous:
-          "absolute left-1 top-0 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-transparent opacity-50 hover:opacity-100 cursor-pointer",
-        button_next:
-          "absolute right-1 top-0 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-transparent opacity-50 hover:opacity-100 cursor-pointer",
+        dropdowns: "flex items-center gap-2 w-full justify-center",
+        dropdown_root: "relative",
+        dropdown:
+          "absolute inset-0 opacity-0 cursor-pointer z-10",
+        months_dropdown:
+          "inline-flex items-center justify-center rounded-md border border-input bg-background px-2 py-1 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+        years_dropdown:
+          "inline-flex items-center justify-center rounded-md border border-input bg-background px-2 py-1 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+        nav: "absolute inset-x-3 top-2.5 flex items-center justify-between z-20",
         month_grid: "w-full border-collapse",
         weekdays: "flex",
         weekday:
@@ -34,12 +39,28 @@ function Calendar({ className, classNames, ...props }: DayPickerProps) {
         ...classNames,
       }}
       components={{
+        PreviousMonthButton: (btnProps: ComponentProps<"button">) => (
+          <button
+            {...btnProps}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-transparent opacity-50 hover:opacity-100 cursor-pointer"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        ),
+        NextMonthButton: (btnProps: ComponentProps<"button">) => (
+          <button
+            {...btnProps}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-transparent opacity-50 hover:opacity-100 cursor-pointer"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        ),
         Chevron: ({ orientation }) =>
           orientation === "left" ? (
             <ChevronLeft className="h-4 w-4" />
-          ) : (
+          ) : orientation === "right" ? (
             <ChevronRight className="h-4 w-4" />
-          ),
+          ) : <></>,
       }}
       {...props}
     />

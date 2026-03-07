@@ -10,9 +10,9 @@ import {
 } from "./layout.js";
 
 export default function PaymentReceivedEmail({
-  amount,
-  method,
-  periodMonth,
+  amount = "8.00",
+  method = "Credit Card",
+  periodMonth = "March 2026",
 }: {
   amount: string;
   method: string;

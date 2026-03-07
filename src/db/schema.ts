@@ -154,9 +154,9 @@ export const subscriptions = pgTable("subscriptions", {
 
 export const dependants = pgTable("dependants", {
   id: uuid("id").primaryKey().defaultRandom(),
-  subscriptionId: uuid("subscription_id")
+  memberId: uuid("member_id")
     .notNull()
-    .references(() => subscriptions.id, { onDelete: "cascade" }),
+    .references(() => members.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   nric: text("nric"),
   dob: date("dob"),

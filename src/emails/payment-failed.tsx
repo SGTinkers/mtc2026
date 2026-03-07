@@ -9,8 +9,8 @@ import {
 } from "./layout.js";
 
 export default function PaymentFailedEmail({
-  attemptNumber,
-  memberPortalUrl,
+  attemptNumber = 2,
+  memberPortalUrl = "https://skimpintar.org/member",
 }: {
   attemptNumber: number;
   memberPortalUrl: string;

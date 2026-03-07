@@ -370,6 +370,9 @@ function RegisterMemberWizard() {
                   value={form.dob}
                   onChange={(v) => update({ dob: v })}
                   placeholder="Select date of birth"
+                  captionLayout="dropdown"
+                  fromYear={1930}
+                  toYear={new Date().getFullYear()}
                 />
               </div>
 
@@ -484,6 +487,9 @@ function RegisterMemberWizard() {
                     value={depForm.dob}
                     onChange={(v) => setDepForm({ ...depForm, dob: v })}
                     placeholder="Select date of birth"
+                    captionLayout="dropdown"
+                    fromYear={1930}
+                    toYear={new Date().getFullYear()}
                   />
                 </div>
                 <Button

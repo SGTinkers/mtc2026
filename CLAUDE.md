@@ -14,12 +14,13 @@ bun run build        # Production build (bun --bun vite build)
 bun run start        # Run production server (.output/server/index.mjs)
 bun run lint         # Oxlint
 bun run type-check   # TypeScript check (tsgo --noEmit)
-bun run db:push      # Push schema changes to DB
 bun run db:generate  # Generate migration files
 bun run db:migrate   # Run migrations
 bun run db:studio    # Drizzle Studio UI
 bun run db:seed      # Seed plans
 ```
+
+**Database migrations: ALWAYS use `db:generate` then `db:migrate`. NEVER use `db:push`.** The database is production — `db:push` bypasses the migration journal and causes tracking drift.
 
 Package manager is **bun**. Runtime is **Bun** (Nitro preset: `bun`).
 

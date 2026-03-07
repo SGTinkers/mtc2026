@@ -10,6 +10,7 @@ import CoverageReactivatedEmail from "~/emails/coverage-reactivated.js";
 import GiroApprovedEmail from "~/emails/giro-approved.js";
 import WelcomePaymentEmail from "~/emails/welcome-payment.js";
 import WelcomeBackPaymentEmail from "~/emails/welcome-back-payment.js";
+import SubscriptionCancelledEmail from "~/emails/subscription-cancelled.js";
 import { createElement } from "react";
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -133,6 +134,18 @@ export async function sendWelcomePaymentEmail(
       coverageEndDate,
       loginUrl,
     }),
+  });
+}
+
+export async function sendSubscriptionCancelledEmail(
+  email: string,
+  name: string,
+) {
+  await send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: "Subscription Cancelled - Skim Pintar",
+    react: createElement(SubscriptionCancelledEmail, { name }),
   });
 }
 

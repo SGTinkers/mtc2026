@@ -238,6 +238,7 @@ export const getMemberDetail = createServerFn({ method: "GET" })
         coverageStart: subscriptions.coverageStart,
         coverageUntil: subscriptions.coverageUntil,
         graceUntil: subscriptions.graceUntil,
+        stripeSubscriptionId: subscriptions.stripeSubscriptionId,
         planName: plans.name,
         planSlug: plans.slug,
       })
@@ -247,16 +248,13 @@ export const getMemberDetail = createServerFn({ method: "GET" })
       .orderBy(desc(subscriptions.createdAt));
 
     const sub = subs[0] ?? null;
-    let deps: typeof dependants.$inferSelect[] = [];
+
+    const deps = await db
+      .select()
+      .from(dependants)
+      .where(eq(dependants.memberId, memberId));
+
     let paymentHistory: (typeof payments.$inferSelect)[] = [];
-
-    if (sub) {
-      deps = await db
-        .select()
-        .from(dependants)
-        .where(eq(dependants.subscriptionId, sub.id));
-    }
-
     if (subs.length > 0) {
       const allSubIds = subs.map(s => s.id);
       paymentHistory = await db
@@ -374,10 +372,10 @@ export const registerMember = createServerFn({ method: "POST" })
     }).returning();
 
     // Insert dependants if provided
-    if (data.dependants && data.dependants.length > 0 && subscription) {
+    if (data.dependants && data.dependants.length > 0) {
       for (const dep of data.dependants) {
         await db.insert(dependants).values({
-          subscriptionId: subscription.id,
+          memberId: member!.id,
           name: dep.name,
           nric: dep.nric || null,
           dob: dep.dob || null,
@@ -497,7 +495,7 @@ export const recordPayment = createServerFn({ method: "POST" })
         amount: data.amount,
         method: data.method,
         reference: data.reference || null,
-        periodMonth: data.periodMonth || null,
+        periodMonth: data.periodMonth ? `${data.periodMonth}-01` : null,
         recordedBy: session.user.id,
       })
       .returning();
@@ -739,7 +737,7 @@ export const getMemberDependants = createServerFn({ method: "GET" }).handler(
       .from(members)
       .where(eq(members.userId, session.user.id));
 
-    if (!member) return { dependants: [], canAdd: false, subscriptionId: null };
+    if (!member) return { dependants: [], canAdd: false, memberId: null };
 
     const [sub] = await db
       .select({
@@ -753,25 +751,24 @@ export const getMemberDependants = createServerFn({ method: "GET" }).handler(
       .orderBy(desc(subscriptions.createdAt))
       .limit(1);
 
-    if (!sub) return { dependants: [], canAdd: false, subscriptionId: null };
-
     const deps = await db
       .select()
       .from(dependants)
-      .where(eq(dependants.subscriptionId, sub.id));
+      .where(eq(dependants.memberId, member.id));
 
-    const canAdd =
-      sub.planSlug === "pintar_plus" &&
-      (sub.maxDependants === null || deps.length < (sub.maxDependants ?? 0));
+    const canAdd = sub
+      ? sub.planSlug === "pintar_plus" &&
+        (sub.maxDependants === null || deps.length < (sub.maxDependants ?? 0))
+      : false;
 
-    return { dependants: deps, canAdd, subscriptionId: sub.id };
+    return { dependants: deps, canAdd, memberId: member.id };
   },
 );
 
 export const addDependant = createServerFn({ method: "POST" })
   .inputValidator(
     (data: {
-      subscriptionId: string;
+      memberId: string;
       name: string;
       nric?: string;
       dob?: string;
@@ -783,7 +780,20 @@ export const addDependant = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const session = await getSession();
 
-    // Verify the subscription belongs to this user and plan allows dependants
+    // Verify the member belongs to this user
+    const [member] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(
+        and(
+          eq(members.id, data.memberId),
+          eq(members.userId, session.user.id),
+        ),
+      );
+
+    if (!member) throw new Error("Member not found");
+
+    // Check active subscription plan allows dependants
     const [sub] = await db
       .select({
         id: subscriptions.id,
@@ -792,13 +802,9 @@ export const addDependant = createServerFn({ method: "POST" })
       })
       .from(subscriptions)
       .innerJoin(plans, eq(subscriptions.planId, plans.id))
-      .innerJoin(members, eq(subscriptions.memberId, members.id))
-      .where(
-        and(
-          eq(subscriptions.id, data.subscriptionId),
-          eq(members.userId, session.user.id),
-        ),
-      );
+      .where(eq(subscriptions.memberId, member.id))
+      .orderBy(desc(subscriptions.createdAt))
+      .limit(1);
 
     if (!sub || sub.planSlug !== "pintar_plus") {
       throw new Error("Your plan does not support dependants");
@@ -808,7 +814,7 @@ export const addDependant = createServerFn({ method: "POST" })
       const existing = await db
         .select({ count: count() })
         .from(dependants)
-        .where(eq(dependants.subscriptionId, sub.id));
+        .where(eq(dependants.memberId, member.id));
       if (existing[0]!.count >= sub.maxDependants) {
         throw new Error("Maximum number of dependants reached");
       }
@@ -817,7 +823,7 @@ export const addDependant = createServerFn({ method: "POST" })
     const [dep] = await db
       .insert(dependants)
       .values({
-        subscriptionId: data.subscriptionId,
+        memberId: data.memberId,
         name: data.name,
         nric: data.nric || null,
         dob: data.dob || null,
@@ -1104,6 +1110,65 @@ export const cancelSubscription = createServerFn({ method: "POST" })
     });
 
     return { success: true };
+  });
+
+// ─── Update subscription (admin) ───
+
+export const updateSubscription = createServerFn({ method: "POST" })
+  .inputValidator((data: { subscriptionId: string; monthlyAmount: number }) => data)
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+
+    const [sub] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.id, data.subscriptionId));
+
+    if (!sub) throw new Error("Subscription not found");
+    if (sub.status === "cancelled" || sub.status === "lapsed") {
+      throw new Error("Cannot edit a cancelled or lapsed subscription");
+    }
+    if (sub.stripeSubscriptionId) {
+      throw new Error("Cannot edit a Stripe-managed subscription. Use the Stripe dashboard instead.");
+    }
+    if (data.monthlyAmount < 5) {
+      throw new Error("Minimum monthly amount is $5");
+    }
+
+    // Resolve plan from amount
+    const allPlans = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.active, true))
+      .orderBy(desc(plans.minAmount));
+
+    const matchedPlan = allPlans.find((p) => data.monthlyAmount >= Number(p.minAmount));
+    if (!matchedPlan) {
+      throw new Error(`Minimum monthly amount is $${allPlans[allPlans.length - 1]?.minAmount}`);
+    }
+
+    const oldAmount = sub.monthlyAmount;
+    const oldPlanId = sub.planId;
+
+    await db
+      .update(subscriptions)
+      .set({
+        planId: matchedPlan.id,
+        monthlyAmount: data.monthlyAmount.toFixed(2),
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.id, data.subscriptionId));
+
+    await db.insert(auditLog).values({
+      entityType: "subscription",
+      entityId: data.subscriptionId,
+      action: "updated",
+      oldValue: { monthlyAmount: oldAmount, planId: oldPlanId },
+      newValue: { monthlyAmount: data.monthlyAmount.toFixed(2), planId: matchedPlan.id, planName: matchedPlan.name },
+      performedBy: session.user.id,
+    });
+
+    return { success: true, planName: matchedPlan.name };
   });
 
 // ─── Audit logs ───

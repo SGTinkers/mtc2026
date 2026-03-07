@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { getMemberDetail, cancelSubscription, adminUpdateMemberProfile, approveGiroSubscription } from "~/lib/server-fns.js";
+import { getMemberDetail, cancelSubscription, adminUpdateMemberProfile, approveGiroSubscription, updateSubscription } from "~/lib/server-fns.js";
 import { SubscriptionStatusBadge } from "~/components/subscription-status-badge.js";
 import { Button, buttonVariants } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
@@ -36,6 +36,12 @@ function MemberDetail() {
     address: member.address || "",
   });
 
+  const [editingSub, setEditingSub] = useState(false);
+  const [savingSub, setSavingSub] = useState(false);
+  const [subForm, setSubForm] = useState({
+    monthlyAmount: subscription ? Number(subscription.monthlyAmount) : 0,
+  });
+
   async function handleSaveProfile() {
     setSaving(true);
     try {
@@ -50,6 +56,32 @@ function MemberDetail() {
       setSaving(false);
     }
   }
+
+  async function handleSaveSub() {
+    if (!subscription) return;
+    if (subForm.monthlyAmount < 5) {
+      alert("Minimum monthly amount is $5");
+      return;
+    }
+    setSavingSub(true);
+    try {
+      await updateSubscription({
+        data: { subscriptionId: subscription.id, monthlyAmount: subForm.monthlyAmount },
+      });
+      setEditingSub(false);
+      router.invalidate();
+    } catch (e: any) {
+      alert(e.message || "Failed to update subscription");
+    } finally {
+      setSavingSub(false);
+    }
+  }
+
+  const canEditSub =
+    subscription &&
+    subscription.status !== "cancelled" &&
+    subscription.status !== "lapsed" &&
+    !subscription.stripeSubscriptionId;
 
   const canCancel =
     subscription &&
@@ -191,6 +223,14 @@ function MemberDetail() {
                 <SubscriptionStatusBadge status={subscription.status} />
               </div>
               <div className="flex gap-2">
+                {canEditSub && !editingSub && (
+                  <Button variant="outline" size="sm" onClick={() => {
+                    setSubForm({ monthlyAmount: Number(subscription!.monthlyAmount) });
+                    setEditingSub(true);
+                  }}>
+                    Edit
+                  </Button>
+                )}
                 {canApproveGiro && (
                   <Button
                     size="sm"
@@ -215,36 +255,87 @@ function MemberDetail() {
             </div>
           </CardHeader>
           <CardContent>
-            <dl className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <dt className="text-sm text-muted-foreground">Plan</dt>
-                <dd className="font-medium">{subscription.planName}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-muted-foreground">Monthly Amount</dt>
-                <dd className="font-medium">
-                  ${Number(subscription.monthlyAmount).toFixed(2)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-muted-foreground">Payment Method</dt>
-                <dd className="font-medium capitalize">{subscription.paymentMethod}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-muted-foreground">Coverage Start</dt>
-                <dd className="font-medium">{subscription.coverageStart}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-muted-foreground">Coverage Until</dt>
-                <dd className="font-medium">{subscription.coverageUntil}</dd>
-              </div>
-              {subscription.graceUntil && (
-                <div>
-                  <dt className="text-sm text-muted-foreground">Grace Until</dt>
-                  <dd className="font-medium">{subscription.graceUntil}</dd>
+            {editingSub ? (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="subAmount">Monthly Amount</Label>
+                  <Input
+                    id="subAmount"
+                    type="number"
+                    step="0.01"
+                    min="5"
+                    value={subForm.monthlyAmount}
+                    onChange={(e) => setSubForm({ monthlyAmount: Number(e.target.value) })}
+                  />
                 </div>
-              )}
-            </dl>
+                <div>
+                  <dt className="text-sm text-muted-foreground">Plan</dt>
+                  <dd className="font-medium">{subForm.monthlyAmount >= 20 ? "Skim Pintar Plus" : "Skim Pintar"}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">Payment Method</dt>
+                  <dd className="font-medium capitalize">{subscription.paymentMethod}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">Coverage Start</dt>
+                  <dd className="font-medium">{subscription.coverageStart}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">Coverage Until</dt>
+                  <dd className="font-medium">{subscription.coverageUntil}</dd>
+                </div>
+                {subscription.graceUntil && (
+                  <div>
+                    <dt className="text-sm text-muted-foreground">Grace Until</dt>
+                    <dd className="font-medium">{subscription.graceUntil}</dd>
+                  </div>
+                )}
+                <div className="flex gap-2 sm:col-span-3">
+                  <Button size="sm" disabled={savingSub} onClick={handleSaveSub}>
+                    {savingSub ? "Saving…" : "Save"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={savingSub}
+                    onClick={() => setEditingSub(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <dl className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <dt className="text-sm text-muted-foreground">Plan</dt>
+                  <dd className="font-medium">{subscription.planName}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">Monthly Amount</dt>
+                  <dd className="font-medium">
+                    ${Number(subscription.monthlyAmount).toFixed(2)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">Payment Method</dt>
+                  <dd className="font-medium capitalize">{subscription.paymentMethod}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">Coverage Start</dt>
+                  <dd className="font-medium">{subscription.coverageStart}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">Coverage Until</dt>
+                  <dd className="font-medium">{subscription.coverageUntil}</dd>
+                </div>
+                {subscription.graceUntil && (
+                  <div>
+                    <dt className="text-sm text-muted-foreground">Grace Until</dt>
+                    <dd className="font-medium">{subscription.graceUntil}</dd>
+                  </div>
+                )}
+              </dl>
+            )}
           </CardContent>
         </Card>
       )}

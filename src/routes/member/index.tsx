@@ -157,13 +157,13 @@ function OnboardingWizard({
   };
 
   const handleAddFamilyMember = async () => {
-    if (!addForm.name || !addForm.relationship || !dependantsData?.subscriptionId)
+    if (!addForm.name || !addForm.relationship || !dependantsData?.memberId)
       return;
     setAddingMember(true);
     try {
       await addDependant({
         data: {
-          subscriptionId: dependantsData.subscriptionId,
+          memberId: dependantsData.memberId,
           name: addForm.name,
           dob: addForm.dob || undefined,
           relationship: addForm.relationship as

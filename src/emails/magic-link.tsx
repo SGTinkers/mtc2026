@@ -7,7 +7,9 @@ import {
   colors,
 } from "./layout.js";
 
-export default function MagicLinkEmail({ url }: { url: string }) {
+export default function MagicLinkEmail({
+  url = "https://skimpintar.org/member/auth?token=abc123",
+}: { url: string }) {
   return (
     <EmailLayout preview="Your Skim Pintar login link">
       <Text style={headingStyle}>Sign in to Skim Pintar</Text>

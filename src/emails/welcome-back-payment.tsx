@@ -10,9 +10,9 @@ import {
 } from "./layout.js";
 
 export default function WelcomeBackPaymentEmail({
-  amount,
-  planName,
-  coverageEndDate,
+  amount = "8.00",
+  planName = "Individual",
+  coverageEndDate = "30 April 2026",
 }: {
   amount: string;
   planName: string;

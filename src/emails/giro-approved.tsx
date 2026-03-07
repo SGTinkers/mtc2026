@@ -6,7 +6,7 @@ import {
   colors,
 } from "./layout.js";
 
-export default function GiroApprovedEmail({ name }: { name: string }) {
+export default function GiroApprovedEmail({ name = "Ahmad" }: { name: string }) {
   return (
     <EmailLayout preview="Your GIRO has been approved - Skim Pintar">
       {/* Green checkmark */}

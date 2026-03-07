@@ -11,11 +11,11 @@ import {
 } from "./layout.js";
 
 export default function WelcomePaymentEmail({
-  name,
-  amount,
-  planName,
-  coverageEndDate,
-  loginUrl,
+  name = "Ahmad",
+  amount = "8.00",
+  planName = "Individual",
+  coverageEndDate = "30 April 2026",
+  loginUrl = "https://skimpintar.org/member",
 }: {
   name: string;
   amount: string;

@@ -6,7 +6,7 @@ import {
   colors,
 } from "./layout.js";
 
-export default function WelcomeEmail({ name }: { name: string }) {
+export default function WelcomeEmail({ name = "Ahmad" }: { name: string }) {
   return (
     <EmailLayout preview={`Welcome to Skim Pintar, ${name}!`}>
       {/* Green checkmark */}

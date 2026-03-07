@@ -7,4 +7,5 @@ export const env = cleanEnv(process.env, {
   STRIPE_SECRET_KEY: str(),
   STRIPE_WEBHOOK_SECRET: str(),
   RESEND_API_KEY: str(),
+  ANTHROPIC_API_KEY: str({ default: "" }),
 });

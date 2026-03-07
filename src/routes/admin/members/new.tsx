@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { registerMember } from "~/lib/server-fns.js";
+import { registerMember, type ScannedFormData } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
 import { Label } from "~/components/ui/label.js";
@@ -21,6 +21,7 @@ import {
 } from "~/components/ui/select.js";
 import { DatePicker } from "~/components/ui/date-picker.js";
 import { Info, X, Check } from "lucide-react";
+import { ScanDocumentButton } from "~/components/scan-document-button.js";
 
 export const Route = createFileRoute("/admin/members/new")({
   component: RegisterMemberWizard,
@@ -143,6 +144,30 @@ function RegisterMemberWizard() {
     update({ dependants: form.dependants.filter((_, i) => i !== idx) });
   }
 
+  function handleScanExtracted(data: ScannedFormData) {
+    const updates: Partial<FormData> = {};
+    if (data.name) updates.name = data.name;
+    if (data.email) updates.email = data.email;
+    if (data.nric) updates.nric = data.nric;
+    if (data.dob) updates.dob = data.dob;
+    if (data.phone) updates.phone = data.phone;
+    if (data.address) updates.address = data.address;
+    if (data.postalCode) updates.postalCode = data.postalCode;
+    if (data.monthlyAmount) updates.monthlyAmount = data.monthlyAmount;
+    if (data.dependants && data.dependants.length > 0) {
+      updates.dependants = data.dependants.map((d) => ({
+        name: d.name,
+        nric: d.nric || "",
+        dob: d.dob || "",
+        phone: d.phone || "",
+        relationship: (["spouse", "child", "parent", "in_law", "sibling"].includes(d.relationship)
+          ? d.relationship
+          : "spouse") as Dependant["relationship"],
+      }));
+    }
+    update(updates);
+  }
+
   async function handleSubmit() {
     setError("");
     setLoading(true);
@@ -219,13 +244,20 @@ function RegisterMemberWizard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{visibleSteps[step]?.label}</CardTitle>
-          <CardDescription>
-            {logicalStep === 0 && "Set up the member's account and subscription plan"}
-            {logicalStep === 1 && "Fill in personal details for the member"}
-            {logicalStep === 2 && "Add family members covered under Skim Pintar Plus"}
-            {logicalStep === 3 && "Review all details before registering"}
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle>{visibleSteps[step]?.label}</CardTitle>
+              <CardDescription>
+                {logicalStep === 0 && "Set up the member's account and subscription plan"}
+                {logicalStep === 1 && "Fill in personal details for the member"}
+                {logicalStep === 2 && "Add family members covered under Skim Pintar Plus"}
+                {logicalStep === 3 && "Review all details before registering"}
+              </CardDescription>
+            </div>
+            {(logicalStep === 0 || logicalStep === 1) && (
+              <ScanDocumentButton onExtracted={handleScanExtracted} variant="admin" />
+            )}
+          </div>
         </CardHeader>
 
         <CardContent>

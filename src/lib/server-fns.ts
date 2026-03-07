@@ -18,6 +18,8 @@ import { sendWelcomeEmail, sendPaymentReceivedEmail, sendGiroApprovedEmail } fro
 import { env } from "~/env.js";
 import { queryMembersWithLatestSub, searchMembers as searchMembersRepo } from "./members.repo.js";
 
+import Anthropic from "@anthropic-ai/sdk";
+
 // ─── Auth helpers ───
 
 async function getSession() {
@@ -1197,6 +1199,126 @@ export const getAuditLogs = createServerFn({ method: "GET" })
     const rows = queryRows as AuditRow[];
 
     return { rows, total, page, pageSize };
+  });
+
+// ─── Extract form data from document image ───
+
+export type ScannedFormData = {
+  name?: string;
+  email?: string;
+  nric?: string;
+  dob?: string;
+  phone?: string;
+  address?: string;
+  postalCode?: string;
+  monthlyAmount?: string;
+  dependants?: Array<{
+    name: string;
+    nric?: string;
+    dob?: string;
+    phone?: string;
+    relationship: string;
+    sameAddress?: boolean;
+    address?: string;
+  }>;
+};
+
+export const extractFormFromImage = createServerFn({ method: "POST" })
+  .inputValidator((data: { image: string; mediaType: string }) => data)
+  .handler(async ({ data }): Promise<ScannedFormData> => {
+    await getSession();
+
+    if (!env.ANTHROPIC_API_KEY) {
+      throw new Error("Document scanning is not configured");
+    }
+
+    const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 2048,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: data.mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                data: data.image,
+              },
+            },
+            {
+              type: "text",
+              text: `Extract all information from this document. It may be a Singapore NRIC card, or a "PINTAR PLUS DEPENDENTS INFORMATION" form from Masjid Ar-Raudhah with these sections:
+
+- MEMBERS DETAIL: Full Name, I/C No (NRIC), Date of Birth, Home Address, Postal Code, Contact No (H) and (Hp), Email
+- Section A: Dependants at the same address — rows with Full Name (according to I/C), Date of Birth, Relationship (spouse, parent, in_law, child, sibling)
+- Section B: Dependants NOT at the same address (parents & in-laws) — Full Name, Relationship, Address
+
+Return a JSON object with only the fields you can confidently read from the handwriting/print:
+
+{
+  "name": "primary member full name",
+  "email": "email address",
+  "nric": "I/C number e.g. S1234567A",
+  "dob": "date of birth in YYYY-MM-DD format",
+  "phone": "phone number (Hp mobile preferred, otherwise H home)",
+  "address": "home address",
+  "postalCode": "postal code",
+  "dependants": [
+    {
+      "name": "dependant full name as written",
+      "dob": "dependant DOB in YYYY-MM-DD format if readable",
+      "relationship": "one of: spouse, child, parent, in_law, sibling",
+      "sameAddress": true
+    }
+  ]
+}
+
+For Section B dependants, set "sameAddress" to false and add an "address" field.
+Only include fields you can confidently read. Omit empty/unreadable fields. Return ONLY valid JSON, no other text.`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const text = response.content[0]?.type === "text" ? response.content[0].text : "";
+
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return {};
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      const result: ScannedFormData = {};
+      const stringFields = ["name", "email", "nric", "dob", "phone", "address", "postalCode", "monthlyAmount"] as const;
+      for (const key of stringFields) {
+        if (parsed[key] && typeof parsed[key] === "string") {
+          result[key] = parsed[key];
+        }
+      }
+
+      if (Array.isArray(parsed.dependants) && parsed.dependants.length > 0) {
+        const validRelationships = ["spouse", "child", "parent", "in_law", "sibling"];
+        result.dependants = parsed.dependants
+          .filter((d: any) => d.name && typeof d.name === "string")
+          .map((d: any) => ({
+            name: d.name,
+            ...(d.nric && typeof d.nric === "string" && { nric: d.nric }),
+            ...(d.dob && typeof d.dob === "string" && { dob: d.dob }),
+            ...(d.phone && typeof d.phone === "string" && { phone: d.phone }),
+            relationship: validRelationships.includes(d.relationship) ? d.relationship : "spouse",
+            sameAddress: d.sameAddress !== false,
+            ...(d.address && typeof d.address === "string" && { address: d.address }),
+          }));
+      }
+
+      return result;
+    } catch {
+      return {};
+    }
   });
 
 export const createBillingPortalSession = createServerFn({

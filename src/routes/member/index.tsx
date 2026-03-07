@@ -23,6 +23,7 @@ import {
   HandHeart,
 } from "lucide-react";
 import { DatePicker } from "~/components/ui/date-picker.js";
+import { ScanDocumentButton } from "~/components/scan-document-button.js";
 
 export const Route = createFileRoute("/member/")({
   loader: async () => {
@@ -322,6 +323,29 @@ function OnboardingWizard({
 
           {/* Form */}
           <div className="flex flex-1 flex-col gap-5">
+            <ScanDocumentButton
+              variant="member"
+              onExtracted={(data) => {
+                setForm((prev) => ({
+                  ...prev,
+                  ...(data.name && { name: data.name }),
+                  ...(data.nric && { nric: data.nric }),
+                  ...(data.dob && { dob: data.dob }),
+                  ...(data.phone && { phone: data.phone }),
+                  ...(data.address && { address: data.address }),
+                  ...(data.postalCode && { postalCode: data.postalCode }),
+                }));
+                if (data.dependants && data.dependants.length > 0) {
+                  const newMembers = data.dependants.map((d) => ({
+                    name: d.name,
+                    dob: d.dob || "",
+                    relationship: d.relationship || "spouse",
+                  }));
+                  setAddedMembers((prev) => [...prev, ...newMembers]);
+                }
+              }}
+            />
+
             <FormField
               label="Full Name"
               required

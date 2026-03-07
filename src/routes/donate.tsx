@@ -109,14 +109,6 @@ function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
           }}
         >
           <div className="success-hero-animate flex flex-col items-center gap-4 lg:gap-5 max-w-md text-center">
-            <Link to="/">
-              <img
-                src="/logo.webp"
-                alt="Masjid Ar-Raudhah"
-                className="h-10 lg:h-14 w-auto"
-              />
-            </Link>
-
             <div className="relative flex items-center justify-center">
               <div className="success-glow-ring" />
               <div className="success-confetti-wrap">

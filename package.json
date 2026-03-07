@@ -17,6 +17,7 @@
     "email-dev": "email dev --dir src/emails --port 4000"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.3.0",
     "@react-email/preview-server": "5.2.9",
     "@types/bun": "latest",
     "@types/react": "^19.2.14",

@@ -94,20 +94,18 @@ export async function getMembersForExport(filters?: { status?: string; planId?: 
   const result = await query.orderBy(desc(members.createdAt));
   
   // Fetch dependants for all active subscriptions
-  const subIds = result.map(r => r.subscriptionId).filter(Boolean) as string[];
+  const memberIds = result.map(r => r.id).filter(Boolean) as string[];
   
   let allDependants: typeof dependants.$inferSelect[] = [];
-  if (subIds.length > 0) {
+  if (memberIds.length > 0) {
     // SQLite/Postgres param limits usually fine for 1000 items, but chunking is safer
     // Using a simpler approach since data is relatively small
     const depRecords = await db.select().from(dependants);
-    allDependants = depRecords.filter(d => subIds.includes(d.subscriptionId));
+    allDependants = depRecords.filter(d => memberIds.includes(d.memberId));
   }
 
   return result.map(row => {
-    const rowDependants = row.subscriptionId 
-      ? allDependants.filter(d => d.subscriptionId === row.subscriptionId)
-      : [];
+    const rowDependants = allDependants.filter(d => d.memberId === row.id);
     
     return {
       ...row,

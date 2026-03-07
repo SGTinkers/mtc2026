@@ -1663,7 +1663,7 @@ export const importMembersCsv = createServerFn({ method: "POST" })
                 }
 
                 await db.insert(dependants).values({
-                  subscriptionId: subscription.id,
+                  memberId: memberId,
                   name: depName,
                   relationship,
                   sameAddress: true,

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getEvent, readRawBody, getHeader } from "vinxi/http";
 import { env } from "~/env.js";
 import { stripe } from "~/lib/stripe.js";
 import { db } from "~/db/index.js";
@@ -20,12 +21,13 @@ import {
 import { auth } from "~/lib/auth.js";
 import type Stripe from "stripe";
 
-async function handleWebhook(request: Request): Promise<Response> {
-  const body = await request.text();
-  const sig = request.headers.get("stripe-signature");
+async function handleWebhook(): Promise<Response> {
+  const h3Event = getEvent();
+  const body = await readRawBody(h3Event);
+  const sig = getHeader(h3Event, "stripe-signature");
 
-  if (!sig) {
-    return new Response("Missing signature", { status: 400 });
+  if (!sig || !body) {
+    return new Response("Missing signature or body", { status: 400 });
   }
 
   let event: Stripe.Event;
@@ -35,7 +37,8 @@ async function handleWebhook(request: Request): Promise<Response> {
       sig,
       env.STRIPE_WEBHOOK_SECRET,
     );
-  } catch {
+  } catch (err) {
+    console.error("[Webhook] Signature verification failed:", err);
     return new Response("Webhook signature verification failed", {
       status: 400,
     });
@@ -338,7 +341,7 @@ async function handleWebhook(request: Request): Promise<Response> {
 export const Route = createFileRoute("/api/webhooks/stripe")({
   server: {
     handlers: {
-      POST: ({ request }) => handleWebhook(request),
+      POST: () => handleWebhook(),
     },
   },
 });

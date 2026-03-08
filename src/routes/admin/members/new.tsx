@@ -244,38 +244,22 @@ function RegisterMemberWizard() {
       <h2 className="mb-6 text-2xl font-bold">Register New Member</h2>
 
       {/* Step indicator */}
-      <div className="mb-8 flex items-center gap-1">
+      <div className="mb-8 flex items-center gap-3">
         {visibleSteps.map((s, i) => (
-          <div key={i} className="flex flex-1 items-center">
-            <div className="flex flex-1 flex-col items-center gap-1.5">
-              <div className="flex w-full items-center">
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                    i < step
-                      ? "bg-primary text-primary-foreground"
-                      : i === step
-                        ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2"
-                        : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {i < step ? <Check className="h-4 w-4" /> : i + 1}
-                </div>
-                {i < visibleSteps.length - 1 && (
-                  <div
-                    className={`mx-1 h-0.5 flex-1 transition-colors ${
-                      i < step ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
-                )}
-              </div>
-              <span
-                className={`text-xs font-medium ${
-                  i <= step ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                {s.label}
-              </span>
-            </div>
+          <div
+            key={i}
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              i < step
+                ? "bg-primary/10 text-primary"
+                : i === step
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-[11px] font-bold">
+              {i < step ? <Check className="h-3 w-3" /> : i + 1}
+            </span>
+            {s.label}
           </div>
         ))}
       </div>

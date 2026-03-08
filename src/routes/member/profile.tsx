@@ -187,6 +187,9 @@ function ProfileField({
           defaultValue={defaultValue}
           placeholder={placeholder ?? "Pick a date"}
           className="h-auto rounded-xl border-gray-200 px-4 py-3 text-gd hover:bg-white focus-visible:border-g1 focus-visible:ring-g1/10"
+          captionLayout="dropdown"
+          fromYear={1930}
+          toYear={new Date().getFullYear()}
         />
       </div>
     );

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getAdminStats } from "~/lib/server-fns.js";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "~/components/ui/card.js";
-import { Users, CreditCard, DollarSign, Clock, TrendingUp, Heart, UserPlus, ArrowRight, AlertTriangle } from "lucide-react";
+import { Users, CreditCard, DollarSign, Clock, TrendingUp, UserPlus, ArrowRight, AlertTriangle } from "lucide-react";
 import { SubscriptionStatusBadge } from "~/components/subscription-status-badge.js";
 import {
   Table,
@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/table.js";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart.js";
+import { Badge } from "~/components/ui/badge.js";
 
 export const Route = createFileRoute("/admin/")({
   loader: () => getAdminStats(),
@@ -50,16 +51,16 @@ function AdminDashboard() {
       iconColor: "text-emerald-600",
     },
     {
-      title: "Monthly Revenue",
+      title: "Monthly Recurring Donation",
       value: `$${Number(stats.mrr).toFixed(2)}`,
       icon: TrendingUp,
       iconBg: "bg-blue-50",
       iconColor: "text-blue-600",
     },
     {
-      title: "Donations (Month)",
-      value: `$${Number(stats.donationsThisMonth).toFixed(2)}`,
-      icon: Heart,
+      title: "New Donors this Month",
+      value: stats.newMembersThisMonth,
+      icon: UserPlus,
       iconBg: "bg-amber-50",
       iconColor: "text-amber-600",
     },
@@ -70,13 +71,6 @@ function AdminDashboard() {
       iconBg: "bg-green-50",
       iconColor: "text-green-700",
     },
-    {
-      title: "Pending Payments",
-      value: stats.pendingPayments,
-      icon: Clock,
-      iconBg: "bg-slate-100",
-      iconColor: "text-slate-500",
-    },
   ];
 
   const revenueChartConfig = {
@@ -86,15 +80,6 @@ function AdminDashboard() {
     },
   };
 
-  const planChartConfig = stats.planBreakdown.reduce((acc, plan, i) => {
-    const name = plan.planName || "Unknown";
-    acc[name] = {
-      label: name,
-      color: CHART_COLORS[i % CHART_COLORS.length]!,
-    };
-    return acc;
-  }, {} as Record<string, { label: string; color: string }>);
-
   const paymentChartConfig = stats.paymentMethods.reduce((acc, p, i) => {
     const method = p.method || "Other";
     acc[method] = {
@@ -103,12 +88,6 @@ function AdminDashboard() {
     };
     return acc;
   }, {} as Record<string, { label: string; color: string }>);
-
-  const planData = stats.planBreakdown.map((item, i) => ({
-    name: item.planName || "Unknown",
-    value: item.count,
-    fill: CHART_COLORS[i % CHART_COLORS.length]!,
-  }));
 
   const paymentData = stats.paymentMethods.map((item, i) => ({
     name: (item.method || "Other").replace("_", " "),
@@ -153,6 +132,23 @@ function AdminDashboard() {
             </CardContent>
           </Card>
         ))}
+        <Link to="/admin/members" search={{ status: "pending_payment" }}>
+          <Card className="border border-amber-200 shadow-sm hover:shadow-md hover:ring-1 ring-amber-200 transition-all bg-white cursor-pointer h-full">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100">
+                  <Clock className="h-[18px] w-[18px] text-amber-600" />
+                </div>
+                <ArrowRight className="h-4 w-4 text-amber-400" />
+              </div>
+              <div className="text-2xl font-bold text-foreground tabular-nums tracking-tight">
+                {stats.pendingPayments}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">Pending Payments</p>
+              <p className="text-xs text-amber-600 mt-1.5 font-medium">View members &rarr;</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Charts Row */}
@@ -327,51 +323,24 @@ function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Membership Plans */}
         <Card className="border border-border/60 shadow-sm bg-white">
-          <CardHeader className="px-6 pt-5 pb-0">
+          <CardHeader className="px-6 pt-5 pb-3">
             <CardTitle className="text-base font-semibold text-foreground">Membership Plans</CardTitle>
             <CardDescription className="text-xs">Active subscription breakdown</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-center items-center pt-2 pb-6">
+          <CardContent className="flex flex-col gap-3 px-6 pb-5">
             {stats.planBreakdown.length > 0 ? (
-              <>
-                <ChartContainer
-                  config={planChartConfig}
-                  className="mx-auto aspect-square max-h-[240px] w-full"
-                >
-                  <PieChart>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel className="text-sm" />} />
-                    <Pie
-                      data={planData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
-                      paddingAngle={3}
-                      dataKey="value"
-                      strokeWidth={2}
-                      stroke="#fff"
-                    >
-                      {planData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-                <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2">
-                  {planData.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <div
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: item.fill }}
-                      />
-                      <span className="text-xs text-muted-foreground">{item.name}</span>
-                      <span className="text-xs font-semibold text-foreground">{item.value}</span>
-                    </div>
-                  ))}
+              stats.planBreakdown.map((plan, i) => (
+                <div key={plan.planName} className="flex items-center gap-3">
+                  <div
+                    className="h-2.5 w-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                  />
+                  <span className="text-sm text-foreground flex-1">{plan.planName || "Unknown"}</span>
+                  <span className="text-sm font-bold text-foreground tabular-nums">{plan.count}</span>
                 </div>
-              </>
+              ))
             ) : (
-              <div className="text-muted-foreground flex items-center justify-center h-full text-sm">
+              <div className="text-muted-foreground text-sm py-4 text-center">
                 No active subscriptions
               </div>
             )}

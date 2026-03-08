@@ -51,12 +51,13 @@ export async function sendPaymentReceivedEmail(
   amount: string,
   method: string,
   periodMonth: string,
+  reference?: string,
 ) {
   await send({
     from: FROM_EMAIL,
     to: email,
     subject: "Payment Received - Skim Pintar",
-    react: createElement(PaymentReceivedEmail, { amount, method, periodMonth }),
+    react: createElement(PaymentReceivedEmail, { amount, method, periodMonth, reference }),
   });
 }
 

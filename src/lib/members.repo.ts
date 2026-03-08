@@ -35,16 +35,21 @@ const memberColumns = (latestSub: ReturnType<typeof latestSubQuery>) =>
     monthlyAmount: latestSub.monthlyAmount,
   }) as const;
 
-export async function queryMembersWithLatestSub() {
+export async function queryMembersWithLatestSub(opts?: { statusFilter?: string }) {
   const latestSub = latestSubQuery();
 
-  return db
+  const query = db
     .select(memberColumns(latestSub))
     .from(members)
     .leftJoin(user, eq(members.userId, user.id))
     .leftJoin(latestSub, eq(latestSub.memberId, members.id))
-    .leftJoin(plans, eq(latestSub.planId, plans.id))
-    .orderBy(desc(members.createdAt));
+    .leftJoin(plans, eq(latestSub.planId, plans.id));
+
+  if (opts?.statusFilter) {
+    query.where(eq(latestSub.status, opts.statusFilter as any));
+  }
+
+  return query.orderBy(desc(members.createdAt));
 }
 
 export async function searchMembers(query: string) {

@@ -299,6 +299,7 @@ async function handleWebhook(request: Request): Promise<Response> {
                 (invoice.amount_paid / 100).toFixed(2),
                 "Stripe",
                 new Date().toLocaleDateString(),
+                invoice.number ?? undefined,
               );
             }
           } catch {

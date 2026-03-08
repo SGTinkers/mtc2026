@@ -13,10 +13,12 @@ export default function PaymentReceivedEmail({
   amount = "8.00",
   method = "Credit Card",
   periodMonth = "March 2026",
+  reference = "PAY-20260308-001",
 }: {
   amount: string;
   method: string;
   periodMonth: string;
+  reference?: string;
 }) {
   return (
     <EmailLayout preview={`Payment of $${amount} received`}>
@@ -55,6 +57,17 @@ export default function PaymentReceivedEmail({
         >
           <strong style={{ color: colors.text }}>Period:</strong> {periodMonth}
         </Text>
+        {reference && (
+          <Text
+            style={{
+              fontSize: "14px",
+              color: colors.textMuted,
+              margin: "4px 0 0 0",
+            }}
+          >
+            <strong style={{ color: colors.text }}>Ref:</strong> {reference}
+          </Text>
+        )}
       </DetailBox>
 
       <Text style={paragraphStyle}>

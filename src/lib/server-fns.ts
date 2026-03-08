@@ -67,19 +67,10 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(
     currentMonthStart.setDate(1);
     currentMonthStart.setHours(0, 0, 0, 0);
 
-    const [donationsData] = await db
-      .select({
-        totalDonations: sql<string>`coalesce(sum(${payments.amount} - ${plans.minAmount}), 0)`
-      })
-      .from(payments)
-      .innerJoin(subscriptions, eq(payments.subscriptionId, subscriptions.id))
-      .innerJoin(plans, eq(subscriptions.planId, plans.id))
-      .where(
-        and(
-          sql`${payments.createdAt} >= ${currentMonthStart.toISOString()}`,
-          sql`${payments.amount} > ${plans.minAmount}`
-        )
-      );
+    const [newMembersData] = await db
+      .select({ count: count() })
+      .from(members)
+      .where(gte(members.createdAt, currentMonthStart));
 
     // Membership per plan breakdown
     const planBreakdown = await db
@@ -148,7 +139,7 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(
       totalRevenue: totalRevenue!.total,
       pendingPayments: pendingPayments!.count,
       mrr: mrrData!.mrr,
-      donationsThisMonth: donationsData!.totalDonations,
+      newMembersThisMonth: newMembersData!.count,
       planBreakdown,
       monthlyRevenue: monthlyRevenue.map(m => ({
         month: m.month,
@@ -218,12 +209,14 @@ export const getPlans = createServerFn({ method: "GET" }).handler(async () => {
 
 // ─── Members ───
 
-export const getMembers = createServerFn({ method: "GET" }).handler(
-  async () => {
+export const getMembers = createServerFn({ method: "GET" })
+  .inputValidator((data: { status?: string }) => data)
+  .handler(async ({ data }) => {
     await requireAdminSession();
-    return queryMembersWithLatestSub();
-  },
-);
+    return queryMembersWithLatestSub(
+      data.status ? { statusFilter: data.status } : undefined,
+    );
+  });
 
 export const searchMembersForPayment = createServerFn({ method: "GET" })
   .inputValidator((query: string) => query)
@@ -292,6 +285,42 @@ export const getMemberDetail = createServerFn({ method: "GET" })
     return { member, subscription: sub, subscriptions: subs, dependants: deps, payments: paymentHistory };
   });
 
+// ─── Check duplicate email / NRIC ───
+
+export const checkMemberExists = createServerFn({ method: "GET" })
+  .inputValidator((data: { email?: string; nric?: string }) => data)
+  .handler(async ({ data }) => {
+    await requireAdminSession();
+
+    const result: { emailExists: boolean; nricExists: boolean } = {
+      emailExists: false,
+      nricExists: false,
+    };
+
+    if (data.email) {
+      const [existing] = await db
+        .select({ id: user.id })
+        .from(user)
+        .where(eq(user.email, data.email.toLowerCase().trim()))
+        .limit(1);
+      result.emailExists = !!existing;
+    }
+
+    if (data.nric) {
+      const trimmed = data.nric.trim();
+      if (trimmed) {
+        const [existing] = await db
+          .select({ id: members.id })
+          .from(members)
+          .where(eq(members.nric, trimmed))
+          .limit(1);
+        result.nricExists = !!existing;
+      }
+    }
+
+    return result;
+  });
+
 // ─── Register member (admin walk-in) ───
 
 export const registerMember = createServerFn({ method: "POST" })
@@ -354,17 +383,31 @@ export const registerMember = createServerFn({ method: "POST" })
     }
 
     // Create member record
-    const [member] = await db
-      .insert(members)
-      .values({
-        userId: newUser.user.id,
-        nric: data.nric || null,
-        dob: data.dob || null,
-        address: data.address || null,
-        postalCode: data.postalCode || null,
-        createdBy: session.user.id,
-      })
-      .returning();
+    let member;
+    try {
+      [member] = await db
+        .insert(members)
+        .values({
+          userId: newUser.user.id,
+          nric: data.nric || null,
+          dob: data.dob || null,
+          address: data.address || null,
+          postalCode: data.postalCode || null,
+          createdBy: session.user.id,
+        })
+        .returning();
+    } catch (err: any) {
+      if (err?.code === "23505") {
+        if (err.constraint?.includes("nric")) {
+          throw new Error("A member with this NRIC already exists");
+        }
+        if (err.constraint?.includes("user_id")) {
+          throw new Error("This email is already registered as a member");
+        }
+        throw new Error("A member with these details already exists");
+      }
+      throw err;
+    }
 
     // Determine subscription status
     const paymentMethod = data.paymentMethod || "cash";
@@ -560,6 +603,7 @@ export const recordPayment = createServerFn({ method: "POST" })
             data.amount,
             data.method,
             data.periodMonth || "current month",
+            data.reference,
           );
         }
       } catch {

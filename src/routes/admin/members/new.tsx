@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
-import { registerMember, type ScannedFormData } from "~/lib/server-fns.js";
+import { useState, useEffect, useRef } from "react";
+import { registerMember, checkMemberExists, type ScannedFormData } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
 import { Input } from "~/components/ui/input.js";
 import { Label } from "~/components/ui/label.js";
@@ -20,7 +20,7 @@ import {
   SelectItem,
 } from "~/components/ui/select.js";
 import { DatePicker } from "~/components/ui/date-picker.js";
-import { Info, X, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Info, X, Check, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { ScanDocumentButton } from "~/components/scan-document-button.js";
 
 export const Route = createFileRoute("/admin/members/new")({
@@ -106,6 +106,39 @@ function RegisterMemberWizard() {
     relationship: "spouse",
   });
 
+  const [emailExists, setEmailExists] = useState(false);
+  const [nricExists, setNricExists] = useState(false);
+  const emailTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const nricTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    setEmailExists(false);
+    if (emailTimerRef.current) clearTimeout(emailTimerRef.current);
+    const email = form.email.trim();
+    if (!email || !email.includes("@")) return;
+    emailTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await checkMemberExists({ data: { email } });
+        setEmailExists(res.emailExists);
+      } catch {}
+    }, 500);
+    return () => { if (emailTimerRef.current) clearTimeout(emailTimerRef.current); };
+  }, [form.email]);
+
+  useEffect(() => {
+    setNricExists(false);
+    if (nricTimerRef.current) clearTimeout(nricTimerRef.current);
+    const nric = form.nric.trim();
+    if (!nric) return;
+    nricTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await checkMemberExists({ data: { nric } });
+        setNricExists(res.nricExists);
+      } catch {}
+    }, 500);
+    return () => { if (nricTimerRef.current) clearTimeout(nricTimerRef.current); };
+  }, [form.nric]);
+
   const amount = Number(form.monthlyAmount);
   const plan = resolvedPlan(amount);
   const isPintarPlus = amount >= 20;
@@ -131,7 +164,10 @@ function RegisterMemberWizard() {
 
   function canNext(): boolean {
     if (logicalStep === 0) {
-      return !!(form.email && form.name && amount >= 5 && plan);
+      return !!(form.email && form.name && amount >= 5 && plan && !emailExists);
+    }
+    if (logicalStep === 1) {
+      return !nricExists;
     }
     return true;
   }
@@ -252,7 +288,7 @@ function RegisterMemberWizard() {
               <CardDescription>
                 {logicalStep === 0 && "Set up the member's account and subscription plan"}
                 {logicalStep === 1 && "Fill in personal details for the member"}
-                {logicalStep === 2 && "Add family members covered under Skim Pintar Plus"}
+                {logicalStep === 2 && "Add family members covered under Skim Pintar Plus. You can skip this and add them later."}
                 {logicalStep === 3 && "Review all details before registering"}
               </CardDescription>
             </div>
@@ -293,6 +329,15 @@ function RegisterMemberWizard() {
                   />
                 </div>
               </div>
+
+              {emailExists && (
+                <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                  <p className="text-sm text-destructive">
+                    A member with this email already exists.
+                  </p>
+                </div>
+              )}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -365,6 +410,15 @@ function RegisterMemberWizard() {
                   />
                 </div>
               </div>
+
+              {nricExists && (
+                <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                  <p className="text-sm text-destructive">
+                    A member with this NRIC already exists.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Date of Birth</Label>
@@ -558,7 +612,7 @@ function RegisterMemberWizard() {
           {/* Step 4: Review & Confirm */}
           {logicalStep === 3 && (
             <div className="space-y-6">
-              <div className="rounded-lg border p-4 space-y-3">
+              <div className="rounded-lg bg-muted/50 p-4 space-y-3">
                 <h4 className="text-sm font-semibold text-muted-foreground">Account & Plan</h4>
                 <dl className="grid gap-2 sm:grid-cols-2 text-sm">
                   <div>
@@ -593,7 +647,7 @@ function RegisterMemberWizard() {
               </div>
 
               {(form.phone || form.nric || form.dob || form.address || form.postalCode) && (
-                <div className="rounded-lg border p-4 space-y-3">
+                <div className="rounded-lg bg-muted/50 p-4 space-y-3">
                   <h4 className="text-sm font-semibold text-muted-foreground">Personal Details</h4>
                   <dl className="grid gap-2 sm:grid-cols-2 text-sm">
                     {form.phone && (
@@ -631,7 +685,7 @@ function RegisterMemberWizard() {
               )}
 
               {form.dependants.length > 0 && (
-                <div className="rounded-lg border p-4 space-y-3">
+                <div className="rounded-lg bg-muted/50 p-4 space-y-3">
                   <h4 className="text-sm font-semibold text-muted-foreground">
                     Family Members ({form.dependants.length})
                   </h4>
@@ -651,7 +705,7 @@ function RegisterMemberWizard() {
 
               {/* Record first payment toggle (non-GIRO only) */}
               {!isGiro && (
-                <div className="rounded-lg border p-4 space-y-4">
+                <div className="rounded-lg bg-muted/50 p-4 space-y-4">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"

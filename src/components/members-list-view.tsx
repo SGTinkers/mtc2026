@@ -16,9 +16,10 @@ import {
   TableCell,
   TableCaption,
 } from "~/components/ui/table.js";
-import { UserPlus, Search } from "lucide-react";
+import { UserPlus, Search, X } from "lucide-react";
 import { ExportMembersDialog } from "~/components/export-members-dialog.js";
 import { ImportMembersDialog } from "~/components/import-members-dialog.js";
+import { useNavigate } from "@tanstack/react-router";
 
 type Member = {
   id: string;
@@ -30,14 +31,15 @@ type Member = {
   subStatus: any;
 };
 
-export function MembersListView({ members }: { members: Member[] }) {
-  const [search, setSearch] = useState("");
+export function MembersListView({ members, statusFilter }: { members: Member[]; statusFilter?: string }) {
+  const [searchText, setSearchText] = useState("");
+  const navigate = useNavigate();
 
   const filtered = members.filter(
     (m) =>
-      m.userName?.toLowerCase().includes(search.toLowerCase()) ||
-      m.userEmail?.toLowerCase().includes(search.toLowerCase()) ||
-      m.nric?.includes(search || ""),
+      m.userName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      m.userEmail?.toLowerCase().includes(searchText.toLowerCase()) ||
+      m.nric?.includes(searchText || ""),
   );
 
   return (
@@ -56,14 +58,29 @@ export function MembersListView({ members }: { members: Member[] }) {
         </div>
       </div>
 
+      {statusFilter && (
+        <div className="mb-4 flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1.5 py-1 px-3 text-sm">
+            Status: {statusFilter.replace("_", " ")}
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/admin/members", search: {} })}
+              className="ml-1 rounded-full hover:bg-muted p-0.5"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by name, email, or NRIC..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               className="pl-10"
             />
           </div>

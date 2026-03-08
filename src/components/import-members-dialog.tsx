@@ -79,7 +79,7 @@ export function ImportMembersDialog() {
                 <p className="text-sm text-muted-foreground">
                   Upload a CSV file containing member data. Expected columns:
                   <br/>
-                  <code className="bg-muted p-1 rounded mt-2 block overflow-x-auto text-xs whitespace-nowrap">
+                  <code className="bg-muted p-2 rounded mt-2 block text-xs whitespace-break-spaces break-all text-muted-foreground border">
                     Name, Email, Phone, NRIC, DOB, Address, PostalCode, Plan, MonthlyAmount, Dependants
                   </code>
                 </p>

@@ -6,7 +6,7 @@ import {
   removeDependant,
   updateSubscriptionAmount,
 } from "~/lib/server-fns.js";
-import { Plus, X, Users, Heart, UserPlus, Shield, ArrowUp, Info, Check } from "lucide-react";
+import { Plus, X, Users, Heart, UserPlus, Shield, ArrowUp, Info, Check, PartyPopper } from "lucide-react";
 import { DatePicker } from "~/components/ui/date-picker.js";
 import {
   Dialog,
@@ -257,6 +257,8 @@ function UpgradePrompt({
   onUpgraded: () => void;
 }) {
   const [showForm, setShowForm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successAmount, setSuccessAmount] = useState(0);
   const [selectedAmount, setSelectedAmount] = useState<number>(20);
   const [customAmount, setCustomAmount] = useState("");
   const [isCustom, setIsCustom] = useState(false);
@@ -272,8 +274,9 @@ function UpgradePrompt({
     setError(null);
     try {
       await updateSubscriptionAmount({ data: { monthlyAmount: effectiveAmount } });
+      setSuccessAmount(effectiveAmount);
       setShowForm(false);
-      onUpgraded();
+      setShowSuccess(true);
     } catch (err: any) {
       setError(err?.message || "Failed to upgrade");
     } finally {
@@ -401,6 +404,34 @@ function UpgradePrompt({
           </div>
         </div>
       )}
+
+      <Dialog
+        open={showSuccess}
+        onOpenChange={(open) => {
+          setShowSuccess(open);
+          if (!open) onUpgraded();
+        }}
+      >
+        <DialogContent className="max-w-sm text-center">
+          <div className="flex flex-col items-center gap-4 py-2">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-g1/15">
+              <PartyPopper className="h-8 w-8 text-g1" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="font-[family-name:var(--font-family-heading)] text-xl">
+                Jazakumullahu Khairan!
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm leading-relaxed text-txt2">
+              Your contribution has been updated to{" "}
+              <span className="font-semibold text-gd">${successAmount}/mo</span>.
+              You're now on{" "}
+              <span className="font-semibold text-g1">Skim Pintar Plus</span>{" "}
+              — you can start adding your family members.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Users, Shield, CheckCircle, Mail, AlertCircle } from "lucide-react";
+import { ArrowRight, Check, Users, Shield, CheckCircle, ClipboardCheck, AlertCircle } from "lucide-react";
 import {
   createDonateCheckout,
   getCheckoutSubscriptionInfo,
@@ -214,21 +214,21 @@ function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
         <div className="mx-auto w-full max-w-md lg:max-w-xl px-6 py-8 lg:py-12 flex flex-col gap-6 lg:gap-8">
           <div className="success-next-steps flex flex-col items-center gap-3 rounded-2xl bg-white border border-gray-100 p-6 text-center">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-g1/10">
-              <Mail size={20} className="text-g1" />
+              <ClipboardCheck size={20} className="text-g1" />
             </div>
-            <p className="font-semibold text-gd">Check your email</p>
+            <p className="font-semibold text-gd">Complete your profile</p>
             <p className="text-sm text-txt2 leading-relaxed">
-              We've sent a login link to your email. Use it to access your
-              member portal and manage your subscription.
+              Log in to the member's portal to complete your profile and
+              activate your perks.
             </p>
           </div>
 
           <div className="flex flex-col items-center gap-3">
             <Link
-              to="/"
+              to="/member/login"
               className="flex w-full items-center justify-center gap-2 rounded-full bg-gold py-4 lg:py-5 font-bold lg:text-lg text-gdeep hover:brightness-105 transition-all donate-cta-glow"
             >
-              Back to Homepage
+              Login to Member's Portal
               <ArrowRight size={18} />
             </Link>
           </div>

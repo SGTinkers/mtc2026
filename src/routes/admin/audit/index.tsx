@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { getAuditLogs, searchUsersForAudit } from "~/lib/server-fns.js";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card.js";
+import { Card, CardContent } from "~/components/ui/card.js";
 import {
   Table,
   TableHeader,

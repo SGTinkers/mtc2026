@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getAllPayments } from "~/lib/server-fns.js";
 import { Button } from "~/components/ui/button.js";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card.js";
+import { Card, CardContent } from "~/components/ui/card.js";
 import {
   Table,
   TableHeader,

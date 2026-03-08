@@ -36,3 +36,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # vinxi
 .vinxi
 .output
+
+# docs (local planning only)
+docs/

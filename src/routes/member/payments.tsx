@@ -7,7 +7,7 @@ import {
   getMemberPayments,
   updateSubscriptionAmount,
 } from "~/lib/server-fns.js";
-import { CreditCard, ExternalLink, Receipt, AlertTriangle, ArrowRight } from "lucide-react";
+import { CreditCard, ExternalLink, Receipt, AlertTriangle, ArrowRight, XCircle } from "lucide-react";
 import { SubscriptionStatusBadge } from "~/components/subscription-status-badge.js";
 import { Button } from "~/components/ui/button.js";
 

@@ -745,6 +745,9 @@ export const getMemberDependants = createServerFn({ method: "GET" }).handler(
         id: subscriptions.id,
         planSlug: plans.slug,
         maxDependants: plans.maxDependants,
+        paymentMethod: subscriptions.paymentMethod,
+        status: subscriptions.status,
+        stripeSubscriptionId: subscriptions.stripeSubscriptionId,
       })
       .from(subscriptions)
       .innerJoin(plans, eq(subscriptions.planId, plans.id))
@@ -762,7 +765,14 @@ export const getMemberDependants = createServerFn({ method: "GET" }).handler(
         (sub.maxDependants === null || deps.length < (sub.maxDependants ?? 0))
       : false;
 
-    return { dependants: deps, canAdd, memberId: member.id };
+    const canUpgrade = sub
+      ? sub.status === "active" &&
+        sub.planSlug !== "pintar_plus" &&
+        sub.paymentMethod === "stripe" &&
+        !!sub.stripeSubscriptionId
+      : false;
+
+    return { dependants: deps, canAdd, canUpgrade, memberId: member.id };
   },
 );
 
@@ -1442,7 +1452,7 @@ export const updateSubscriptionAmount = createServerFn({ method: "POST" })
       const [depCount] = await db
         .select({ count: count() })
         .from(dependants)
-        .where(eq(dependants.subscriptionId, sub.id));
+        .where(eq(dependants.memberId, member.id));
       if (depCount && depCount.count > 0) {
         throw new Error(
           "Please remove all dependants before downgrading from Pintar Plus",

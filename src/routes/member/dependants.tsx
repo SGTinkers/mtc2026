@@ -4,9 +4,18 @@ import {
   getMemberDependants,
   addDependant,
   removeDependant,
+  updateSubscriptionAmount,
 } from "~/lib/server-fns.js";
-import { Plus, X, Users, Heart, UserPlus, Shield } from "lucide-react";
+import { Plus, X, Users, Heart, UserPlus, Shield, ArrowUp, Info, Check } from "lucide-react";
 import { DatePicker } from "~/components/ui/date-picker.js";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog.js";
+import { PINTAR_PLUS_ALL_PERKS } from "~/lib/perks.js";
 
 export const Route = createFileRoute("/member/dependants")({
   loader: () => getMemberDependants(),
@@ -22,7 +31,7 @@ const relationshipLabels: Record<string, string> = {
 };
 
 function DependantsPage() {
-  const { dependants: deps, canAdd, memberId } = Route.useLoaderData();
+  const { dependants: deps, canAdd, canUpgrade, memberId } = Route.useLoaderData();
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -97,11 +106,7 @@ function DependantsPage() {
 
       {/* Plan doesn't support dependants */}
       {memberId && !canAdd && deps.length === 0 && (
-        <EmptyState
-          icon={<Users className="h-8 w-8 text-txt3" />}
-          title="Family coverage not included"
-          desc="Upgrade to Skim Pintar Plus ($20/mo) to add family members to your coverage."
-        />
+        <UpgradePrompt canUpgrade={canUpgrade} onUpgraded={() => router.invalidate()} />
       )}
 
       {/* Can add but no deps yet */}
@@ -236,6 +241,164 @@ function DependantsPage() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const UPGRADE_AMOUNTS = [20, 30, 50];
+
+function UpgradePrompt({
+  canUpgrade,
+  onUpgraded,
+}: {
+  canUpgrade: boolean;
+  onUpgraded: () => void;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [selectedAmount, setSelectedAmount] = useState<number>(20);
+  const [customAmount, setCustomAmount] = useState("");
+  const [isCustom, setIsCustom] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const effectiveAmount = isCustom ? Number(customAmount) || 0 : selectedAmount;
+  const isValid = effectiveAmount >= 20;
+
+  const handleUpgrade = async () => {
+    if (!isValid || upgrading) return;
+    setUpgrading(true);
+    setError(null);
+    try {
+      await updateSubscriptionAmount({ data: { monthlyAmount: effectiveAmount } });
+      setShowForm(false);
+      onUpgraded();
+    } catch (err: any) {
+      setError(err?.message || "Failed to upgrade");
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white py-10 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+        <Users className="h-8 w-8 text-txt3" />
+      </div>
+      <p className="mt-4 text-sm font-semibold text-gd">
+        Family coverage not included
+      </p>
+      <p className="mt-1 max-w-xs text-xs leading-relaxed text-txt2">
+        Contribute $20/mo or more to unlock{" "}
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="inline-flex items-center gap-0.5 font-semibold text-g1 decoration-dotted underline underline-offset-2 hover:text-g2">
+              Skim Pintar Plus
+              <Info className="inline h-3 w-3" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 font-[family-name:var(--font-family-heading)]">
+                <Users className="h-5 w-5 text-gold" />
+                Skim Pintar Plus
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-txt2">
+              As a thank you for contributing $20/mo or more, your coverage extends to your immediate family.
+            </p>
+            <div className="flex flex-col gap-2.5">
+              {PINTAR_PLUS_ALL_PERKS.map((perk) => (
+                <div key={perk} className="flex items-center gap-2.5">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15">
+                    <Check className="h-3 w-3 text-gold" />
+                  </div>
+                  <span className="text-sm text-gd">{perk}</span>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+        {" "}and add family members to your coverage.
+      </p>
+
+      {canUpgrade && !showForm && (
+        <button
+          onClick={() => setShowForm(true)}
+          className="mt-4 flex items-center gap-1.5 rounded-lg bg-g1 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-g2"
+        >
+          <ArrowUp className="h-3.5 w-3.5" />
+          Contribute More
+        </button>
+      )}
+
+      {canUpgrade && showForm && (
+        <div className="mt-5 w-full max-w-xs px-4">
+          <p className="mb-2 text-xs font-medium text-txt2">
+            Choose monthly contribution (min $20)
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {UPGRADE_AMOUNTS.map((val) => (
+              <button
+                key={val}
+                onClick={() => {
+                  setSelectedAmount(val);
+                  setIsCustom(false);
+                  setCustomAmount("");
+                  setError(null);
+                }}
+                className={`rounded-lg py-2.5 text-sm font-semibold transition-all ${!isCustom && selectedAmount === val
+                  ? "bg-gdeep text-gold ring-2 ring-gold/30"
+                  : "bg-gray-50 text-gd border border-gray-200 hover:border-g1/30"
+                  }`}
+              >
+                ${val}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+            <span className="text-sm font-semibold text-gd">$</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Custom amount"
+              value={customAmount}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, "");
+                setCustomAmount(val);
+                setIsCustom(true);
+                setError(null);
+              }}
+              onFocus={() => setIsCustom(true)}
+              className="flex-1 bg-transparent text-sm font-semibold text-gd outline-none placeholder:font-normal placeholder:text-txt3"
+            />
+            <span className="text-[10px] text-txt3">/month</span>
+          </div>
+          {isCustom && effectiveAmount > 0 && effectiveAmount < 20 && (
+            <p className="mt-1.5 text-[11px] text-amber-600">
+              Minimum $20/mo for family coverage
+            </p>
+          )}
+          {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={handleUpgrade}
+              disabled={!isValid || upgrading}
+              className="flex-1 rounded-lg bg-g1 py-2.5 text-xs font-bold text-white transition-all hover:bg-g2 disabled:opacity-50"
+            >
+              {upgrading ? "Contributing…" : `Contribute $${effectiveAmount}/mo`}
+            </button>
+            <button
+              onClick={() => {
+                setShowForm(false);
+                setError(null);
+              }}
+              className="rounded-lg border border-gray-200 px-4 py-2.5 text-xs font-medium text-txt2 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -12,6 +12,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  TableCaption,
 } from "~/components/ui/table.js";
 import { ShieldPlus, Search, Pencil, X, Check, KeyRound } from "lucide-react";
 import { authClient } from "~/lib/auth-client.js";
@@ -272,6 +273,11 @@ function AdminsList() {
                 </TableRow>
               )}
             </TableBody>
+            {filtered.length > 0 && (
+              <TableCaption className="text-left px-4 pb-2">
+                Total: {filtered.length} admins
+              </TableCaption>
+            )}
           </Table>
         </CardContent>
       </Card>

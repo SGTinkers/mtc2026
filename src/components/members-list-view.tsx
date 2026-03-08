@@ -14,6 +14,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  TableCaption,
 } from "~/components/ui/table.js";
 import { UserPlus, Search } from "lucide-react";
 import { ExportMembersDialog } from "~/components/export-members-dialog.js";
@@ -114,6 +115,11 @@ export function MembersListView({ members }: { members: Member[] }) {
                 </TableRow>
               )}
             </TableBody>
+            {filtered.length > 0 && (
+              <TableCaption className="text-left px-4 pb-2">
+                Showing {filtered.length} of {members.length} members
+              </TableCaption>
+            )}
           </Table>
         </CardContent>
       </Card>

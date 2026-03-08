@@ -13,6 +13,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  TableCaption,
 } from "~/components/ui/table.js";
 
 export const Route = createFileRoute("/admin/members/$id")({
@@ -357,20 +358,25 @@ function MemberDetail() {
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {pastSubscriptions.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">{s.planName}</TableCell>
-                    <TableCell>${Number(s.monthlyAmount).toFixed(2)}/mo</TableCell>
-                    <TableCell>{s.coverageStart} — {s.coverageUntil}</TableCell>
-                    <TableCell className="capitalize">{s.paymentMethod.replace("_", " ")}</TableCell>
-                    <TableCell>
-                      <SubscriptionStatusBadge status={s.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                  <TableBody>
+                    {pastSubscriptions.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-medium">{s.planName}</TableCell>
+                        <TableCell>${Number(s.monthlyAmount).toFixed(2)}/mo</TableCell>
+                        <TableCell>{s.coverageStart} — {s.coverageUntil}</TableCell>
+                        <TableCell className="capitalize">{s.paymentMethod.replace("_", " ")}</TableCell>
+                        <TableCell>
+                          <SubscriptionStatusBadge status={s.status} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  {pastSubscriptions.length > 0 && (
+                    <TableCaption className="text-left px-4 pb-2">
+                      Total: {pastSubscriptions.length} past subscriptions
+                    </TableCaption>
+                  )}
+                </Table>
           </CardContent>
         </Card>
       )}
@@ -445,22 +451,27 @@ function MemberDetail() {
                   <TableHead>Reference</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {payments.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell>
-                      {new Date(p.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
-                    <TableCell className="capitalize">
-                      {p.method.replace("_", " ")}
-                    </TableCell>
-                    <TableCell>{p.periodMonth || "—"}</TableCell>
-                    <TableCell>{p.reference || "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                  <TableBody>
+                    {payments.map((p) => (
+                      <TableRow key={p.id}>
+                        <TableCell>
+                          {new Date(p.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
+                        <TableCell className="capitalize">
+                          {p.method.replace("_", " ")}
+                        </TableCell>
+                        <TableCell>{p.periodMonth || "—"}</TableCell>
+                        <TableCell>{p.reference || "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  {payments.length > 0 && (
+                    <TableCaption className="text-left px-4 pb-2">
+                      Total: {payments.length} payments
+                    </TableCaption>
+                  )}
+                </Table>
           )}
         </CardContent>
       </Card>

@@ -9,6 +9,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  TableFooter,
 } from "~/components/ui/table.js";
 import { Plus } from "lucide-react";
 
@@ -73,6 +74,15 @@ function PaymentsList() {
                   </TableRow>
                 ))}
               </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={2}>Total ({payments.length})</TableCell>
+                  <TableCell className="font-bold">
+                    ${payments.reduce((sum, p) => sum + Number(p.amount), 0).toFixed(2)}
+                  </TableCell>
+                  <TableCell colSpan={3} />
+                </TableRow>
+              </TableFooter>
             </Table>
           )}
         </CardContent>

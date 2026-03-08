@@ -9,6 +9,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  TableCaption,
 } from "~/components/ui/table.js";
 import { Badge } from "~/components/ui/badge.js";
 import { Button } from "~/components/ui/button.js";
@@ -396,6 +397,11 @@ function AuditTrail() {
                   </TableRow>
                 ))}
               </TableBody>
+              {rows.length > 0 && (
+                <TableCaption className="text-left px-4 pb-2">
+                  Showing {rows.length} of {total} entries
+                </TableCaption>
+              )}
             </Table>
           )}
         </CardContent>

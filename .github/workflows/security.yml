@@ -1,6 +1,8 @@
 name: Security Scanning
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -34,6 +36,7 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
   semgrep:
     name: SAST (Semgrep)

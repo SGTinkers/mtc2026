@@ -15,7 +15,8 @@
     "db:create-admin": "bun run src/db/create-admin.ts",
     "lint": "oxlint src/",
     "type-check": "tsgo --noEmit",
-    "email-dev": "email dev --dir src/emails --port 4000"
+    "email-dev": "email dev --dir src/emails --port 4000",
+    "security": "bash scripts/security-scan.sh"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.3.0",

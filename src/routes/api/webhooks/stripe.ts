@@ -245,10 +245,15 @@ async function handleWebhook(request: Request): Promise<Response> {
           ? parentSub
           : parentSub?.id ?? null;
 
-      // Skip initial subscription invoice entirely — checkout.session.completed
-      // already created the payment record and set coverage
+      // Skip initial subscription invoice — checkout.session.completed handles it
       if (invoice.billing_reason === "subscription_create") {
         console.log("[Webhook] Skipping initial subscription invoice (handled by checkout.session.completed)");
+        break;
+      }
+
+      // Skip $0 proration invoices (from plan changes mid-cycle)
+      if (invoice.amount_paid === 0) {
+        console.log("[Webhook] Skipping $0 invoice", invoice.id, invoice.billing_reason);
         break;
       }
 

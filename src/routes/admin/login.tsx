@@ -41,7 +41,7 @@ function AdminLogin() {
       className="flex min-h-screen flex-col items-center justify-center px-6 py-12 font-[family-name:var(--font-family-body)]"
       style={{
         background:
-          "linear-gradient(170deg, #032A21 0%, #085A44 40%, #0D7C5F 100%)",
+          "linear-gradient(170deg, #070b14 0%, #0c1222 40%, #131d35 100%)",
       }}
     >
       <div className="hero-animate flex w-full max-w-sm flex-col items-center gap-8">

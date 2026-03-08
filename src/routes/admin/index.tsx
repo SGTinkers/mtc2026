@@ -1,7 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getAdminStats } from "~/lib/server-fns.js";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "~/components/ui/card.js";
-import { Users, CreditCard, DollarSign, Clock, TrendingUp, Heart, UserPlus, ArrowRight } from "lucide-react";
+import { Users, CreditCard, DollarSign, Clock, TrendingUp, Heart, UserPlus, ArrowRight, AlertTriangle } from "lucide-react";
+import { SubscriptionStatusBadge } from "~/components/subscription-status-badge.js";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table.js";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart.js";
 
@@ -263,6 +272,56 @@ function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Pending Payments List */}
+      {stats.pendingMembers.length > 0 && (
+        <Card className="border border-amber-200/60 shadow-sm bg-white">
+          <CardHeader className="px-6 pt-5 pb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <CardTitle className="text-base font-semibold text-foreground">
+                Pending Payments ({stats.pendingMembers.length})
+              </CardTitle>
+            </div>
+            <CardDescription className="text-xs">Members requiring payment attention</CardDescription>
+          </CardHeader>
+          <CardContent className="px-6 pb-5">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Coverage Until</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.pendingMembers.map((m) => (
+                  <TableRow key={m.memberId}>
+                    <TableCell>
+                      <Link
+                        to="/admin/members/$id"
+                        params={{ id: m.memberId }}
+                        className="hover:underline"
+                      >
+                        <div className="font-medium">{m.memberName}</div>
+                        <div className="text-xs text-muted-foreground">{m.memberEmail}</div>
+                      </Link>
+                    </TableCell>
+                    <TableCell>{m.planName}</TableCell>
+                    <TableCell>${Number(m.monthlyAmount).toFixed(2)}/mo</TableCell>
+                    <TableCell>{m.coverageUntil}</TableCell>
+                    <TableCell>
+                      <SubscriptionStatusBadge status={m.status} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bottom Row */}
       <div className="grid gap-4 md:grid-cols-2">

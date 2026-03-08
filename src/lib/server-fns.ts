@@ -118,6 +118,30 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(
       .from(payments)
       .groupBy(payments.method);
 
+    // Members with pending/failed payments
+    const pendingMembers = await db
+      .select({
+        memberId: members.id,
+        memberName: user.name,
+        memberEmail: user.email,
+        status: subscriptions.status,
+        monthlyAmount: subscriptions.monthlyAmount,
+        planName: plans.name,
+        coverageUntil: subscriptions.coverageUntil,
+      })
+      .from(subscriptions)
+      .innerJoin(members, eq(subscriptions.memberId, members.id))
+      .innerJoin(user, eq(members.userId, user.id))
+      .innerJoin(plans, eq(subscriptions.planId, plans.id))
+      .where(
+        or(
+          eq(subscriptions.status, "pending_payment"),
+          eq(subscriptions.status, "pending_approval"),
+          eq(subscriptions.status, "grace"),
+        )
+      )
+      .orderBy(subscriptions.coverageUntil);
+
     return {
       totalMembers: memberCount!.count,
       activeSubscriptions: activeSubs!.count,
@@ -126,11 +150,12 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(
       mrr: mrrData!.mrr,
       donationsThisMonth: donationsData!.totalDonations,
       planBreakdown,
-      monthlyRevenue: monthlyRevenue.map(m => ({ 
-        month: m.month, 
-        revenue: Number(m.revenue) 
+      monthlyRevenue: monthlyRevenue.map(m => ({
+        month: m.month,
+        revenue: Number(m.revenue)
       })),
-      paymentMethods
+      paymentMethods,
+      pendingMembers,
     };
   },
 );

@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   getMemberDashboard,
@@ -810,6 +810,35 @@ function Dashboard({
       <h3 className="font-[family-name:var(--font-family-heading)] text-sm font-bold text-gd">
         Your Benefits
       </h3>
+
+      {subscription.status === "cancelled" && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              Subscription cancelled
+            </p>
+            <p className="mt-0.5 text-xs leading-relaxed text-amber-700">
+              Your benefits remain active until{" "}
+              <span className="font-semibold">
+                {coverageEnd.toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+              . After this date, your coverage will end.
+            </p>
+            <Link
+              to="/donate"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-800 underline underline-offset-2 hover:text-amber-900"
+            >
+              Start a new subscription
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Plan tier card */}
       <div

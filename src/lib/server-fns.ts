@@ -1505,6 +1505,73 @@ export const updateSubscriptionAmount = createServerFn({ method: "POST" })
     };
   });
 
+// ─── Cancel subscription (member self-service) ───
+
+export const cancelMySubscription = createServerFn({ method: "POST" }).handler(
+  async () => {
+    const session = await getSession();
+
+    const [member] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(eq(members.userId, session.user.id));
+    if (!member) throw new Error("Member not found");
+
+    const [sub] = await db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.memberId, member.id),
+          eq(subscriptions.status, "active"),
+        ),
+      )
+      .orderBy(desc(subscriptions.createdAt))
+      .limit(1);
+
+    if (!sub) throw new Error("No active subscription found");
+    if (sub.status === "cancelled") throw new Error("Already cancelled");
+
+    if (sub.stripeSubscriptionId) {
+      try {
+        await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+      } catch (e: any) {
+        if (e?.code === "resource_missing") {
+          await db
+            .update(subscriptions)
+            .set({
+              status: "cancelled",
+              cancelledAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.id, sub.id));
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      await db
+        .update(subscriptions)
+        .set({
+          status: "cancelled",
+          cancelledAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(subscriptions.id, sub.id));
+    }
+
+    await db.insert(auditLog).values({
+      entityType: "subscription",
+      entityId: sub.id,
+      action: "cancelled",
+      newValue: { status: "cancelled", cancelledBy: "member" },
+      performedBy: session.user.id,
+    });
+
+    return { success: true };
+  },
+);
+
 export const createBillingPortalSession = createServerFn({
   method: "POST",
 }).handler(async () => {

@@ -39,7 +39,7 @@ type SubInfo = {
 function DonateSuccessPage({ sessionId }: { sessionId?: string }) {
   const [subInfo, setSubInfo] = useState<SubInfo | null>(null);
   const [loading, setLoading] = useState(!!sessionId);
-  const [error, setError] = useState(!sessionId);
+  const [, setError] = useState(!sessionId);
 
   useEffect(() => {
     if (!sessionId) return;

@@ -136,7 +136,7 @@ function MultiSelect({
 
   const toggle = (value: string) => {
     const next = new Set(selected);
-    next.has(value) ? next.delete(value) : next.add(value);
+    if (next.has(value)) { next.delete(value); } else { next.add(value); }
     onChange(next);
   };
 

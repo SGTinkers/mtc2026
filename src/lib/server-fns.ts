@@ -1052,7 +1052,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     (data: { subscriptionId: string; monthlyAmount: string }) => data,
   )
   .handler(async ({ data }) => {
-    const session = await getSession();
+    await getSession();
 
     const [sub] = await db
       .select({

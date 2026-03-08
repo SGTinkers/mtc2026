@@ -146,7 +146,6 @@ function ActiveSubscriptionCard({
   const newPlanName = effectiveAmount >= 20 ? "Pintar Plus" : "Pintar";
   const isPlanChange = effectiveAmount > 0 && newPlanSlug !== currentPlanSlug;
   const isUpgrade = effectiveAmount > currentAmount;
-  const isDowngrade = effectiveAmount > 0 && effectiveAmount < currentAmount;
   const isDowngradeBlocked =
     currentPlanSlug === "pintar_plus" &&
     newPlanSlug === "pintar" &&

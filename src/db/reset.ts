@@ -26,7 +26,7 @@ async function reset() {
     // better-auth uses user table. We assume admin accounts have role = 'admin'
     try {
       await sql`DELETE FROM "user" WHERE role != 'admin' OR role IS NULL`;
-    } catch(e) {
+    } catch {
       console.log("Warning: 'role' column might not exist. Deleting all users...");
       await sql`DELETE FROM "user"`;
       console.log("You may need to run 'bun run db:create-admin' to recreate your login.");

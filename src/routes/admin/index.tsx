@@ -13,7 +13,7 @@ import {
 } from "~/components/ui/table.js";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart.js";
-import { Badge } from "~/components/ui/badge.js";
+
 
 export const Route = createFileRoute("/admin/")({
   loader: () => getAdminStats(),

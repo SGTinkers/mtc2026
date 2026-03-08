@@ -88,7 +88,7 @@ export function ScanDocumentButton({
           ref={inputRef}
           type="file"
           accept="image/*"
-          capture="environment"
+
           className="hidden"
           onChange={handleFile}
         />
@@ -123,7 +123,6 @@ export function ScanDocumentButton({
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleFile}
       />

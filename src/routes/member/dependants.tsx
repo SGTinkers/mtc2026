@@ -6,7 +6,7 @@ import {
   removeDependant,
   updateSubscriptionAmount,
 } from "~/lib/server-fns.js";
-import { Plus, X, Users, Heart, UserPlus, Shield, ArrowUp, Info, Check, PartyPopper } from "lucide-react";
+import { Plus, X, Users, Heart, UserPlus, Shield, ArrowUp, Info, Check, PartyPopper, ChevronDown, ChevronUp } from "lucide-react";
 import { DatePicker } from "~/components/ui/date-picker.js";
 import {
   Dialog,
@@ -37,6 +37,7 @@ function DependantsPage() {
   const [loading, setLoading] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [expandedDeps, setExpandedDeps] = useState<Set<string>>(new Set());
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -207,40 +208,84 @@ function DependantsPage() {
       {/* List of dependants */}
       {deps.length > 0 && (
         <div className="flex flex-col gap-3">
-          {deps.map((d) => (
-            <div
-              key={d.id}
-              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-g1/10">
-                <Heart className="h-5 w-5 text-g1" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gd">{d.name}</p>
-                <p className="text-xs text-txt3">
-                  {relationshipLabels[d.relationship] || d.relationship}
-                  {d.dob && (
-                    <>
-                      {" "}
-                      &middot; Born{" "}
-                      {new Date(d.dob).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </>
-                  )}
-                </p>
-              </div>
-              <button
-                onClick={() => handleRemove(d.id)}
-                disabled={removing === d.id}
-                className="rounded-lg p-2 text-txt3 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+          {deps.map((d) => {
+            const isExpanded = expandedDeps.has(d.id);
+            const hasDetails = d.dob || d.nric || d.phone;
+            return (
+              <div
+                key={d.id}
+                className="rounded-xl border border-gray-200 bg-white"
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+                <div
+                  className={`flex items-center gap-3 p-4 ${hasDetails ? "cursor-pointer" : ""}`}
+                  onClick={() => {
+                    if (!hasDetails) return;
+                    setExpandedDeps((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(d.id)) next.delete(d.id);
+                      else next.add(d.id);
+                      return next;
+                    });
+                  }}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-g1/10">
+                    <Heart className="h-5 w-5 text-g1" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gd">{d.name}</p>
+                    <p className="text-xs text-txt3">
+                      {relationshipLabels[d.relationship] || d.relationship}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {hasDetails && (
+                      isExpanded
+                        ? <ChevronUp className="h-4 w-4 text-txt3" />
+                        : <ChevronDown className="h-4 w-4 text-txt3" />
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemove(d.id);
+                      }}
+                      disabled={removing === d.id}
+                      className="min-h-[44px] min-w-[44px] rounded-lg p-2 text-txt3 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                {isExpanded && hasDetails && (
+                  <div className="grid gap-x-6 gap-y-2 border-t border-gray-100 px-4 py-3 text-sm sm:grid-cols-3">
+                    {d.dob && (
+                      <div>
+                        <span className="text-xs text-txt3">Date of Birth</span>
+                        <p className="text-gd">
+                          {new Date(d.dob).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    )}
+                    {d.nric && (
+                      <div>
+                        <span className="text-xs text-txt3">NRIC</span>
+                        <p className="text-gd">{d.nric}</p>
+                      </div>
+                    )}
+                    {d.phone && (
+                      <div>
+                        <span className="text-xs text-txt3">Phone</span>
+                        <p className="text-gd">{d.phone}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

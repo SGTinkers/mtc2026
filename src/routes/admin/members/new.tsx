@@ -20,7 +20,7 @@ import {
   SelectItem,
 } from "~/components/ui/select.js";
 import { DatePicker } from "~/components/ui/date-picker.js";
-import { Info, X, Check } from "lucide-react";
+import { Info, X, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { ScanDocumentButton } from "~/components/scan-document-button.js";
 
 export const Route = createFileRoute("/admin/members/new")({
@@ -94,6 +94,8 @@ function RegisterMemberWizard() {
     initialPaymentAmount: "",
     initialPaymentReference: "",
   });
+
+  const [expandedDeps, setExpandedDeps] = useState<Set<number>>(new Set());
 
   // Adding a new dependant
   const [depForm, setDepForm] = useState<Dependant>({
@@ -401,27 +403,75 @@ function RegisterMemberWizard() {
             <div className="space-y-6">
               {form.dependants.length > 0 && (
                 <div className="space-y-2">
-                  {form.dependants.map((dep, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between rounded-lg border p-3"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">{dep.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {dep.relationship.replace("_", " ")}
-                          {dep.nric && ` · ${dep.nric}`}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeDependant(i)}
+                  {form.dependants.map((dep, i) => {
+                    const isExpanded = expandedDeps.has(i);
+                    const hasDetails = dep.nric || dep.phone || dep.dob;
+                    return (
+                      <div
+                        key={i}
+                        className="rounded-lg border"
                       >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                        <div
+                          className={`flex items-center justify-between p-3 ${hasDetails ? "cursor-pointer" : ""}`}
+                          onClick={() => {
+                            if (!hasDetails) return;
+                            setExpandedDeps((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(i)) next.delete(i);
+                              else next.add(i);
+                              return next;
+                            });
+                          }}
+                        >
+                          <div className="flex min-h-[44px] items-center gap-2">
+                            {hasDetails && (
+                              isExpanded
+                                ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            )}
+                            <div>
+                              <p className="text-sm font-medium">{dep.name}</p>
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {dep.relationship.replace("_", " ")}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeDependant(i);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {isExpanded && hasDetails && (
+                          <div className="grid gap-x-6 gap-y-1 border-t px-3 py-2 text-sm sm:grid-cols-3">
+                            {dep.nric && (
+                              <div>
+                                <span className="text-xs text-muted-foreground">NRIC</span>
+                                <p>{dep.nric}</p>
+                              </div>
+                            )}
+                            {dep.phone && (
+                              <div>
+                                <span className="text-xs text-muted-foreground">Phone</span>
+                                <p>{dep.phone}</p>
+                              </div>
+                            )}
+                            {dep.dob && (
+                              <div>
+                                <span className="text-xs text-muted-foreground">Date of Birth</span>
+                                <p>{new Date(dep.dob).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

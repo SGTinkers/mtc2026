@@ -88,7 +88,7 @@ function PaginationControls({
 }) {
   if (totalPages <= 1) return null;
   return (
-    <div className="sticky -bottom-8 z-10 -mx-8 mt-4 flex items-center justify-between bg-background px-8 py-4">
+    <div className="sticky bottom-0 z-10 -mx-8 mt-4 flex items-center justify-between bg-background px-8 py-4">
       <span className="text-sm text-muted-foreground">
         Page {page} of {totalPages}
       </span>

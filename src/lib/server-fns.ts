@@ -210,12 +210,14 @@ export const getPlans = createServerFn({ method: "GET" }).handler(async () => {
 // ─── Members ───
 
 export const getMembers = createServerFn({ method: "GET" })
-  .inputValidator((data: { status?: string }) => data)
+  .inputValidator((data: { status?: string; search?: string; page?: number }) => data)
   .handler(async ({ data }) => {
     await requireAdminSession();
-    return queryMembersWithLatestSub(
-      data.status ? { statusFilter: data.status } : undefined,
-    );
+    return queryMembersWithLatestSub({
+      statusFilter: data.status || undefined,
+      search: data.search || undefined,
+      page: data.page ?? 1,
+    });
   });
 
 export const searchMembersForPayment = createServerFn({ method: "GET" })
@@ -625,28 +627,41 @@ export const recordPayment = createServerFn({ method: "POST" })
 
 // ─── Get all payments (admin) ───
 
-export const getAllPayments = createServerFn({ method: "GET" }).handler(
-  async () => {
+export const getAllPayments = createServerFn({ method: "GET" })
+  .inputValidator((data: { page?: number; pageSize?: number }) => data)
+  .handler(async ({ data }) => {
     await requireAdminSession();
+    const page = data.page ?? 1;
+    const pageSize = data.pageSize ?? 20;
+    const offset = (page - 1) * pageSize;
 
-    return db
-      .select({
-        id: payments.id,
-        amount: payments.amount,
-        method: payments.method,
-        reference: payments.reference,
-        periodMonth: payments.periodMonth,
-        createdAt: payments.createdAt,
-        memberName: user.name,
-        memberEmail: user.email,
-      })
-      .from(payments)
-      .innerJoin(subscriptions, eq(payments.subscriptionId, subscriptions.id))
-      .innerJoin(members, eq(subscriptions.memberId, members.id))
-      .innerJoin(user, eq(members.userId, user.id))
-      .orderBy(desc(payments.createdAt));
-  },
-);
+    const [queryRows, totalResult] = await Promise.all([
+      db
+        .select({
+          id: payments.id,
+          amount: payments.amount,
+          method: payments.method,
+          reference: payments.reference,
+          periodMonth: payments.periodMonth,
+          createdAt: payments.createdAt,
+          memberName: user.name,
+          memberEmail: user.email,
+        })
+        .from(payments)
+        .innerJoin(subscriptions, eq(payments.subscriptionId, subscriptions.id))
+        .innerJoin(members, eq(subscriptions.memberId, members.id))
+        .innerJoin(user, eq(members.userId, user.id))
+        .orderBy(desc(payments.createdAt))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ total: count() })
+        .from(payments),
+    ]);
+    const total = totalResult[0]?.total ?? 0;
+
+    return { rows: queryRows, total, page, pageSize };
+  });
 
 // ─── Member portal server fns ───
 

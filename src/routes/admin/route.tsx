@@ -19,8 +19,8 @@ export const Route = createFileRoute("/admin")({
 
 const navItems = [
   { to: "/admin" as const, label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/admin/members" as const, label: "Members", icon: Users },
-  { to: "/admin/payments" as const, label: "Payments", icon: CreditCard },
+  { to: "/admin/members" as const, label: "Members", icon: Users, search: { page: 1 } },
+  { to: "/admin/payments" as const, label: "Payments", icon: CreditCard, search: { page: 1 } },
   { to: "/admin/audit" as const, label: "Audit Trail", icon: ScrollText },
   { to: "/admin/admins" as const, label: "Admins", icon: Shield },
 ];
@@ -60,6 +60,7 @@ function AdminLayout() {
             <Link
               key={item.to}
               to={item.to}
+              search={"search" in item ? item.search : undefined}
               activeOptions={{ exact: item.exact }}
               className="group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:bg-white/[0.06] hover:text-white [&.active]:bg-white/[0.08] [&.active]:text-white"
             >
@@ -125,6 +126,7 @@ function AdminLayout() {
             <Link
               key={item.to}
               to={item.to}
+              search={"search" in item ? item.search : undefined}
               activeOptions={{ exact: item.exact }}
               className="flex flex-col items-center gap-0.5 px-3 py-2 text-gray-400 transition-colors [&.active]:text-[#0c1222]"
             >

@@ -231,7 +231,7 @@ function RegisterMemberWizard() {
               : undefined,
         },
       });
-      router.navigate({ to: "/admin/members" });
+      router.navigate({ to: "/admin/members", search: { page: 1 } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -779,7 +779,7 @@ function RegisterMemberWizard() {
             variant="outline"
             onClick={() => {
               if (step === 0) {
-                router.navigate({ to: "/admin/members" });
+                router.navigate({ to: "/admin/members", search: { page: 1 } });
               } else {
                 setStep(step - 1);
                 setError("");

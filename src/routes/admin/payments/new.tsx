@@ -109,7 +109,7 @@ function RecordPayment() {
           periodMonth: search.periodMonth || undefined,
         },
       });
-      navigate({ to: "/admin/payments" });
+      navigate({ to: "/admin/payments", search: { page: 1 } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to record payment");
     } finally {
@@ -229,7 +229,7 @@ function RecordPayment() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate({ to: "/admin/payments" })}
+                onClick={() => navigate({ to: "/admin/payments", search: { page: 1 } })}
               >
                 Cancel
               </Button>

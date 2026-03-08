@@ -1,6 +1,6 @@
 import { db } from "~/db/index.js";
 import { members, plans, subscriptions, user, dependants } from "~/db/schema.js";
-import { eq, desc, or, ilike, and, type SQL } from "drizzle-orm";
+import { eq, desc, or, ilike, and, count, type SQL } from "drizzle-orm";
 
 function latestSubQuery() {
   return db
@@ -35,21 +35,56 @@ const memberColumns = (latestSub: ReturnType<typeof latestSubQuery>) =>
     monthlyAmount: latestSub.monthlyAmount,
   }) as const;
 
-export async function queryMembersWithLatestSub(opts?: { statusFilter?: string }) {
+export async function queryMembersWithLatestSub(opts?: {
+  statusFilter?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
   const latestSub = latestSubQuery();
+  const page = opts?.page ?? 1;
+  const pageSize = opts?.pageSize ?? 20;
+  const offset = (page - 1) * pageSize;
 
-  const query = db
-    .select(memberColumns(latestSub))
-    .from(members)
-    .leftJoin(user, eq(members.userId, user.id))
-    .leftJoin(latestSub, eq(latestSub.memberId, members.id))
-    .leftJoin(plans, eq(latestSub.planId, plans.id));
-
+  const conditions: SQL[] = [];
   if (opts?.statusFilter) {
-    query.where(eq(latestSub.status, opts.statusFilter as any));
+    conditions.push(eq(latestSub.status, opts.statusFilter as any));
+  }
+  if (opts?.search) {
+    const pattern = `%${opts.search}%`;
+    conditions.push(
+      or(
+        ilike(user.name, pattern),
+        ilike(user.email, pattern),
+        ilike(members.nric, pattern),
+      )!,
+    );
   }
 
-  return query.orderBy(desc(members.createdAt));
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [rows, totalResult] = await Promise.all([
+    db
+      .select(memberColumns(latestSub))
+      .from(members)
+      .leftJoin(user, eq(members.userId, user.id))
+      .leftJoin(latestSub, eq(latestSub.memberId, members.id))
+      .leftJoin(plans, eq(latestSub.planId, plans.id))
+      .where(whereClause)
+      .orderBy(desc(members.createdAt))
+      .limit(pageSize)
+      .offset(offset),
+    db
+      .select({ total: count() })
+      .from(members)
+      .leftJoin(user, eq(members.userId, user.id))
+      .leftJoin(latestSub, eq(latestSub.memberId, members.id))
+      .leftJoin(plans, eq(latestSub.planId, plans.id))
+      .where(whereClause),
+  ]);
+
+  const total = totalResult[0]?.total ?? 0;
+  return { rows, total, page, pageSize };
 }
 
 export async function searchMembers(query: string) {

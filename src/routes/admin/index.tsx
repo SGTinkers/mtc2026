@@ -132,7 +132,7 @@ function AdminDashboard() {
             </CardContent>
           </Card>
         ))}
-        <Link to="/admin/members" search={{ status: "pending_payment" }}>
+        <Link to="/admin/members" search={{ page: 1, status: "pending_payment" }}>
           <Card className="border border-amber-200 shadow-sm hover:shadow-md hover:ring-1 ring-amber-200 transition-all bg-white cursor-pointer h-full">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
@@ -369,6 +369,7 @@ function AdminDashboard() {
             </Link>
             <Link
               to="/admin/members"
+              search={{ page: 1 }}
               className="flex items-center gap-4 px-4 py-3.5 rounded-xl border border-border/40 hover:bg-muted/50 transition-colors group"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-slate-200/70 transition-colors">
@@ -382,6 +383,7 @@ function AdminDashboard() {
             </Link>
             <Link
               to="/admin/payments"
+              search={{ page: 1 }}
               className="flex items-center gap-4 px-4 py-3.5 rounded-xl border border-border/40 hover:bg-muted/50 transition-colors group"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-50 group-hover:bg-teal-100/70 transition-colors">

@@ -9,22 +9,34 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  TableFooter,
+  TableCaption,
 } from "~/components/ui/table.js";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+
+type PaymentsSearch = {
+  page: number;
+};
 
 export const Route = createFileRoute("/admin/payments/")({
-  loader: () => getAllPayments(),
+  validateSearch: (search: Record<string, unknown>): PaymentsSearch => ({
+    page: Number(search.page) || 1,
+  }),
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => getAllPayments({ data: { page: deps.page } }),
   component: PaymentsList,
 });
 
 function PaymentsList() {
-  const payments = Route.useLoaderData();
+  const { rows, total, page, pageSize } = Route.useLoaderData();
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Payment History</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Payment History</h2>
+          <p className="text-sm text-muted-foreground">{total} total payments</p>
+        </div>
         <Link to="/admin/payments/new">
           <Button>
             <Plus className="h-4 w-4" />
@@ -35,7 +47,7 @@ function PaymentsList() {
 
       <Card>
         <CardContent className="p-0">
-          {payments.length === 0 ? (
+          {rows.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
               No payments recorded yet.
             </p>
@@ -52,7 +64,7 @@ function PaymentsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.map((p) => (
+                {rows.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell>
                       {new Date(p.createdAt).toLocaleDateString()}
@@ -74,19 +86,37 @@ function PaymentsList() {
                   </TableRow>
                 ))}
               </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={2}>Total ({payments.length})</TableCell>
-                  <TableCell className="font-bold">
-                    ${payments.reduce((sum, p) => sum + Number(p.amount), 0).toFixed(2)}
-                  </TableCell>
-                  <TableCell colSpan={3} />
-                </TableRow>
-              </TableFooter>
+              {rows.length > 0 && (
+                <TableCaption className="text-left px-4 pb-2">
+                  Showing {rows.length} of {total} payments
+                </TableCaption>
+              )}
             </Table>
           )}
         </CardContent>
       </Card>
+
+      {totalPages > 1 && (
+        <div className="sticky bottom-0 z-10 -mx-8 mt-4 flex items-center justify-between bg-background px-8 py-4">
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Link to="/admin/payments" search={{ page: page - 1 }} disabled={page <= 1}>
+              <Button variant="outline" size="sm" disabled={page <= 1}>
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Previous
+              </Button>
+            </Link>
+            <Link to="/admin/payments" search={{ page: page + 1 }} disabled={page >= totalPages}>
+              <Button variant="outline" size="sm" disabled={page >= totalPages}>
+                Next
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
